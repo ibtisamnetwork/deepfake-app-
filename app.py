@@ -207,7 +207,7 @@ if uploaded_file is not None:
             img_tensor = transform(image).unsqueeze(0).to("cpu")
 
             for percent in range(0, 101, 20):
-                time.sleep(0.5)
+                time.sleep(0.3)
                 progress_bar.progress(percent)
 
             with torch.no_grad():
@@ -218,7 +218,7 @@ if uploaded_file is not None:
                 confidence = torch.softmax(outputs, dim=1)[0][predicted.item()] * 100
 
             progress_bar.progress(100)
-            time.sleep(0.2)
+            time.sleep(0.5)
 
         # Display prediction and confidence
         color_class = "pred-real" if pred_class == "Real" else "pred-fake"
@@ -235,5 +235,6 @@ if uploaded_file is not None:
 
 # ====== FOOTER ======
 st.markdown("<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>", unsafe_allow_html=True)
+
 
 
