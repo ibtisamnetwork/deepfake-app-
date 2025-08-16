@@ -146,15 +146,18 @@ if "confidence" not in st.session_state:
     st.session_state.confidence = None
 if "image" not in st.session_state:
     st.session_state.image = None
+if "uploaded_file" not in st.session_state:
+    st.session_state.uploaded_file = None
 
 # ====== FILE UPLOADER ======
 uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg", "png"], key="file_uploader")
 
-st.markdown('<p class="tagline">Upload a face image to detect deepfakes — stay aware!</p>', unsafe_allow_html=True)
-
 if uploaded_file is not None:
+    st.session_state.uploaded_file = uploaded_file
     st.session_state.image = Image.open(uploaded_file).convert("RGB")
     st.image(st.session_state.image, caption="🖼 Uploaded Image")
+
+st.markdown('<p class="tagline">Upload a face image to detect deepfakes — stay aware!</p>', unsafe_allow_html=True)
 
 # ====== ANALYZE BUTTON ======
 if st.session_state.image is not None:
@@ -165,7 +168,6 @@ if st.session_state.image is not None:
             progress_bar = st.progress(0)
             img_tensor = transform(st.session_state.image).unsqueeze(0).to("cpu")
             
-            # Simulate progress
             for percent_complete in range(0, 101, 20):
                 time.sleep(0.2)
                 progress_bar.progress(percent_complete)
@@ -194,10 +196,9 @@ if st.session_state.pred_class is not None:
 
 # ====== RESET BUTTON ======
 def reset():
-    st.session_state.pred_class = None
-    st.session_state.confidence = None
-    st.session_state.image = None
-    st.session_state.file_uploader = None
+    for key in ["pred_class", "confidence", "image", "uploaded_file"]:
+        if key in st.session_state:
+            del st.session_state[key]
     st.experimental_rerun()
 
 st.markdown('<div class="reset-button">', unsafe_allow_html=True)
