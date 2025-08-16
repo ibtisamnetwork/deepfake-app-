@@ -103,6 +103,11 @@ st.markdown("""
         color: #555555;
         font-style: italic;
     }
+    .reset-button {
+        display: flex;
+        justify-content: center;
+        margin-top: 15px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -135,55 +140,60 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ====== FILE UPLOAD ======
-uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg", "png"])
+# ====== SESSION STATE for reset ======
+if "uploaded_file" not in st.session_state:
+    st.session_state.uploaded_file = None
+if "pred_class" not in st.session_state:
+    st.session_state.pred_class = None
+if "confidence" not in st.session_state:
+    st.session_state.confidence = None
 
-# ====== TAGLINE ======
-st.markdown(
-    '<p class="tagline">Upload a face image to detect deepfakes — stay aware!</p>',
-    unsafe_allow_html=True
-)
+# ====== File uploader with state ======
+uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg", "png"], key="uploaded_file")
 
-# ====== SESSION STATE FOR RESET ======
-if "show_result" not in st.session_state:
-    st.session_state.show_result = False
+# Tagline below uploader
+st.markdown('<p class="tagline">Upload a face image to detect deepfakes — stay aware!</p>', unsafe_allow_html=True)
 
-# ====== RESET BUTTON ======
-if st.session_state.show_result:
-    if st.button("🔄 Reset"):
-        st.session_state.show_result = False
-        st.experimental_rerun()
+# ====== Prediction and display ======
+if uploaded_file is not None:
 
-# ====== PREDICTION FLOW ======
-if uploaded_file and not st.session_state.show_result:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption='🖼 Uploaded Image')
 
-    img_tensor = transform(image).unsqueeze(0).to("cpu")
+    # Prediction button
+    if st.button("🧠 Analyze Image"):
+        with st.spinner("Processing..."):
+            img_tensor = transform(image).unsqueeze(0).to("cpu")
+            with torch.no_grad():
+                outputs = model(img_tensor)
+                _, predicted = torch.max(outputs, 1)
+                class_names = ['Fake', 'Real']
+                st.session_state.pred_class = class_names[predicted.item()]
+                st.session_state.confidence = torch.softmax(outputs, dim=1)[0][predicted.item()] * 100
 
-    with st.spinner("🧠 Processing image... Please wait."):
-        with torch.no_grad():
-            outputs = model(img_tensor)
-            _, predicted = torch.max(outputs, 1)
-            class_names = ['Fake', 'Real']
-            pred_class = class_names[predicted.item()]
-            confidence = torch.softmax(outputs, dim=1)[0][predicted.item()] * 100
+    # Show result if available
+    if st.session_state.pred_class is not None:
+        color_class = "pred-real" if st.session_state.pred_class == "Real" else "pred-fake"
+        st.markdown(
+            f"""
+            <div class="result-box">
+                <span>🧠 Prediction:</span> <span class="{color_class}">{st.session_state.pred_class}</span>
+                <p>Confidence: <strong>{st.session_state.confidence:.2f}%</strong></p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    color_class = "pred-real" if pred_class == "Real" else "pred-fake"
+# ====== Reset button always visible ======
+def reset():
+    st.session_state.uploaded_file = None
+    st.session_state.pred_class = None
+    st.session_state.confidence = None
 
-    st.markdown(
-        f"""
-        <div class="result-box">
-            <span>🧠 Prediction:</span> <span class="{color_class}">{pred_class}</span>
-            <p>Confidence: <strong>{confidence:.2f}%</strong></p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+st.markdown('<div class="reset-button">', unsafe_allow_html=True)
+if st.button("🔄 Reset"):
+    reset()
+st.markdown('</div>', unsafe_allow_html=True)
 
-    st.session_state.show_result = True
-
-    st.markdown(
-        "<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>",
-        unsafe_allow_html=True
-    )
+# ====== Footer disclaimer ======
+st.markdown("<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>", unsafe_allow_html=True)
