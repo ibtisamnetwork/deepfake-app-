@@ -21,7 +21,6 @@ st.markdown("""
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         padding: 2rem 1rem 4rem 1rem;
     }
-    /* Gradient header background */
     .header {
         background: linear-gradient(90deg, #4B8BBE, #306998);
         padding: 2rem 1rem;
@@ -31,7 +30,6 @@ st.markdown("""
         box-shadow: 0 6px 15px rgba(75,139,190,0.4);
         margin-bottom: 1.5rem;
     }
-    /* Uploader styled like button */
     div[data-testid="fileUploaderDropzone"] {
         background: #61a0af;
         border-radius: 12px;
@@ -49,7 +47,6 @@ st.markdown("""
         background: #468a96;
         box-shadow: 0 6px 20px rgba(70,138,150,0.7);
     }
-    /* Uploaded image */
     img {
         border-radius: 12px;
         box-shadow: 0 6px 18px rgba(0,0,0,0.15);
@@ -58,7 +55,6 @@ st.markdown("""
         display: block;
         margin: 0 auto 25px auto;
     }
-    /* Result box */
     .result-box {
         background-color: #e9f0f7;
         border-radius: 15px;
@@ -71,7 +67,6 @@ st.markdown("""
         font-weight: 600;
         font-size: 1.2rem;
     }
-    /* Prediction badges */
     .pred-fake {
         color: #d32f2f;
         background-color: #ffebee;
@@ -94,7 +89,6 @@ st.markdown("""
         font-size: 1.4rem;
         margin-left: 10px;
     }
-    /* Tagline below uploader */
     .tagline {
         text-align: center;
         color: #555555;
@@ -103,27 +97,12 @@ st.markdown("""
         margin-bottom: 25px;
         font-size: 1rem;
     }
-    /* Footer disclaimer */
     .footer {
         font-size: 0.85rem;
         text-align: center;
         margin-top: 3rem;
         color: #555555;
         font-style: italic;
-    }
-    /* Reset button style */
-    .stButton>button {
-        background-color: #4B8BBE;
-        color: white;
-        border-radius: 10px;
-        padding: 0.6rem 1.4rem;
-        font-weight: 600;
-        font-size: 1rem;
-        margin-top: 20px;
-    }
-    .stButton>button:hover {
-        background-color: #306998;
-        color: white;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -166,62 +145,41 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-def reset():
-    # Clear the stored prediction and uploaded image in session_state
-    for key in ["pred_class", "confidence", "image"]:
-        if key in st.session_state:
-            del st.session_state[key]
-    # Clear uploaded_file from session state so uploader resets
-    if "uploaded_file" in st.session_state:
-        del st.session_state["uploaded_file"]
-    st.experimental_rerun()
-
-# If an image is uploaded, save it in session_state to persist
 if uploaded_file is not None:
-    st.session_state.uploaded_file = uploaded_file
-
-# Use the image from session_state if exists
-if "uploaded_file" in st.session_state:
-    image = Image.open(st.session_state.uploaded_file).convert("RGB")
+    image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption='🖼 Uploaded Image')
 
-    # If prediction is not done yet, run model with spinner and progress bar
-    if "pred_class" not in st.session_state:
-        with st.spinner("Processing image, please wait..."):
-            progress_bar = st.progress(0)
-            img_tensor = transform(image).unsqueeze(0).to("cpu")
+    # Show spinner and progress bar during processing
+    with st.spinner("Analyzing picture..."):
+        progress_bar = st.progress(0)
+        img_tensor = transform(image).unsqueeze(0).to("cpu")
 
-            # Fake progress for smoothness
-            for percent_complete in range(0, 100, 20):
-                time.sleep(0.1)
-                progress_bar.progress(percent_complete)
+        for percent in range(0, 101, 20):
+            time.sleep(0.1)  # simulate some progress
+            progress_bar.progress(percent)
 
-            with torch.no_grad():
-                outputs = model(img_tensor)
-                _, predicted = torch.max(outputs, 1)
-                class_names = ['Fake', 'Real']
-                st.session_state.pred_class = class_names[predicted.item()]
-                st.session_state.confidence = torch.softmax(outputs, dim=1)[0][predicted.item()] * 100
+        with torch.no_grad():
+            outputs = model(img_tensor)
+            _, predicted = torch.max(outputs, 1)
+            class_names = ['Fake', 'Real']
+            pred_class = class_names[predicted.item()]
+            confidence = torch.softmax(outputs, dim=1)[0][predicted.item()] * 100
 
-            progress_bar.progress(100)
-            time.sleep(0.2)  # Small pause for 100% bar visibility
+        progress_bar.progress(100)
+        time.sleep(0.2)
 
-    # Show prediction result
-    color_class = "pred-real" if st.session_state.pred_class == "Real" else "pred-fake"
+    # Display prediction and confidence
+    color_class = "pred-real" if pred_class == "Real" else "pred-fake"
 
     st.markdown(
         f"""
         <div class="result-box">
-            <span>🧠 Prediction:</span> <span class="{color_class}">{st.session_state.pred_class}</span>
-            <p>Confidence: <strong>{st.session_state.confidence:.2f}%</strong></p>
+            <span>🧠 Prediction:</span> <span class="{color_class}">{pred_class}</span>
+            <p>Confidence: <strong>{confidence:.2f}%</strong></p>
         </div>
         """,
         unsafe_allow_html=True
     )
-
-    # Reset button
-    if st.button("🔄 Reset"):
-        reset()
 
 # Footer disclaimer
 st.markdown("<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>", unsafe_allow_html=True)
