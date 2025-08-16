@@ -146,14 +146,11 @@ if "confidence" not in st.session_state:
     st.session_state.confidence = None
 if "image" not in st.session_state:
     st.session_state.image = None
-if "uploaded_file" not in st.session_state:
-    st.session_state.uploaded_file = None
 
 # ====== FILE UPLOADER ======
 uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg", "png"], key="file_uploader")
 
 if uploaded_file is not None:
-    st.session_state.uploaded_file = uploaded_file
     st.session_state.image = Image.open(uploaded_file).convert("RGB")
     st.image(st.session_state.image, caption="🖼 Uploaded Image")
 
@@ -161,9 +158,7 @@ st.markdown('<p class="tagline">Upload a face image to detect deepfakes — stay
 
 # ====== ANALYZE BUTTON ======
 if st.session_state.image is not None:
-    analyze_clicked = st.button("🧠 Analyze Image")
-
-    if analyze_clicked:
+    if st.button("🧠 Analyze Image"):
         with st.spinner("Processing..."):
             progress_bar = st.progress(0)
             img_tensor = transform(st.session_state.image).unsqueeze(0).to("cpu")
@@ -194,16 +189,16 @@ if st.session_state.pred_class is not None:
         unsafe_allow_html=True
     )
 
-# ====== RESET BUTTON ======
-def reset():
-    for key in ["pred_class", "confidence", "image", "uploaded_file"]:
-        if key in st.session_state:
-            del st.session_state[key]
-    st.experimental_rerun()
+    # Reset button shown only after prediction
+    def reset():
+        for key in ["pred_class", "confidence", "image"]:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.experimental_rerun()
 
-st.markdown('<div class="reset-button">', unsafe_allow_html=True)
-if st.button("🔄 Reset"):
-    reset()
-st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="reset-button">', unsafe_allow_html=True)
+    if st.button("🔄 Reset"):
+        reset()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>", unsafe_allow_html=True)
