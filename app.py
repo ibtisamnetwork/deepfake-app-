@@ -104,6 +104,23 @@ st.markdown("""
         color: #555555;
         font-style: italic;
     }
+    .analyze-button {
+        display: block;
+        margin: 0 auto 20px auto;
+        background-color: #4B8BBE;
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 0.7rem 2rem;
+        border-radius: 10px;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 5px 15px rgba(75,139,190,0.4);
+        transition: background-color 0.3s ease;
+    }
+    .analyze-button:hover {
+        background-color: #306998;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -149,37 +166,41 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption='🖼 Uploaded Image')
 
-    # Show spinner and progress bar during processing
-    with st.spinner("Analyzing picture..."):
-        progress_bar = st.progress(0)
-        img_tensor = transform(image).unsqueeze(0).to("cpu")
+    # Analyze button
+    analyze = st.button("Analyze")
 
-        for percent in range(0, 101, 20):
-            time.sleep(0.1)  # simulate some progress
-            progress_bar.progress(percent)
+    if analyze:
+        # Show spinner + progress bar while predicting
+        with st.spinner("Analyzing picture..."):
+            progress_bar = st.progress(0)
+            img_tensor = transform(image).unsqueeze(0).to("cpu")
 
-        with torch.no_grad():
-            outputs = model(img_tensor)
-            _, predicted = torch.max(outputs, 1)
-            class_names = ['Fake', 'Real']
-            pred_class = class_names[predicted.item()]
-            confidence = torch.softmax(outputs, dim=1)[0][predicted.item()] * 100
+            for percent in range(0, 101, 20):
+                time.sleep(0.15)  # simulate progress
+                progress_bar.progress(percent)
 
-        progress_bar.progress(100)
-        time.sleep(0.2)
+            with torch.no_grad():
+                outputs = model(img_tensor)
+                _, predicted = torch.max(outputs, 1)
+                class_names = ['Fake', 'Real']
+                pred_class = class_names[predicted.item()]
+                confidence = torch.softmax(outputs, dim=1)[0][predicted.item()] * 100
 
-    # Display prediction and confidence
-    color_class = "pred-real" if pred_class == "Real" else "pred-fake"
+            progress_bar.progress(100)
+            time.sleep(0.2)
 
-    st.markdown(
-        f"""
-        <div class="result-box">
-            <span>🧠 Prediction:</span> <span class="{color_class}">{pred_class}</span>
-            <p>Confidence: <strong>{confidence:.2f}%</strong></p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+        # Display prediction and confidence
+        color_class = "pred-real" if pred_class == "Real" else "pred-fake"
+
+        st.markdown(
+            f"""
+            <div class="result-box">
+                <span>🧠 Prediction:</span> <span class="{color_class}">{pred_class}</span>
+                <p>Confidence: <strong>{confidence:.2f}%</strong></p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 # Footer disclaimer
 st.markdown("<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>", unsafe_allow_html=True)
