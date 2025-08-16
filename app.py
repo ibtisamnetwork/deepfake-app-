@@ -4,7 +4,7 @@ import torch
 from torchvision import models, transforms
 import torch.nn as nn
 import time
-import pandas as pd
+import matplotlib.pyplot as plt
 
 # ====== PAGE CONFIG ======
 st.set_page_config(
@@ -125,44 +125,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ====== MODEL SELECTION DROPDOWN ======
-model_option = st.selectbox(
-    "Select model:",
-    ("CNN", "ShuffleNetV2", "Fine Tuned ShuffleNetV2")
-)
-
-@st.cache_resource
-def load_model(option):
-    if option == "CNN":
-        model = models.resnet18(pretrained=False)
-        num_ftrs = model.fc.in_features
-        model.fc = nn.Linear(num_ftrs, 2)
-        model.load_state_dict(torch.load("best_cnn.pth", map_location="cpu"))
-    elif option == "ShuffleNetV2":
-        model = models.shufflenet_v2_x1_0(pretrained=False)
-        num_ftrs = model.fc.in_features
-        model.fc = nn.Linear(num_ftrs, 2)
-        model.load_state_dict(torch.load("best_shufflenet.pth", map_location="cpu"))
-    else:  # Fine Tuned ShuffleNetV2
-        model = models.shufflenet_v2_x1_0(pretrained=False)
-        num_ftrs = model.fc.in_features
-        model.fc = nn.Linear(num_ftrs, 2)
-        model.load_state_dict(torch.load("best_finetuned_shufflenet.pth", map_location="cpu"))
-
-    model.to("cpu")
-    model.eval()
-    return model
-
-model = load_model(model_option)
-
-# ====== IMAGE TRANSFORMS ======
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406],
-                         [0.229, 0.224, 0.225])
-])
-
 # ====== HEADER ======
 st.markdown("""
 <div class="header">
@@ -171,10 +133,61 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# ====== MODEL SELECTION ======
+model_choice = st.selectbox(
+    "🔍 Select a model",
+    ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"]
+)
+
+# ====== MODEL LOADING FUNCTIONS ======
+@st.cache_resource
+def load_finetuned_shufflenet():
+    model = models.shufflenet_v2_x1_0(pretrained=False)
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, 2)
+    model.load_state_dict(torch.load("best_shufflenet.pth", map_location=torch.device("cpu")))
+    model.to(torch.device("cpu"))
+    model.eval()
+    return model
+
+@st.cache_resource
+def load_shufflenet():
+    model = models.shufflenet_v2_x1_0(pretrained=True)
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, 2)  # Dummy 2-class output
+    model.to(torch.device("cpu"))
+    model.eval()
+    return model
+
+@st.cache_resource
+def load_cnn():
+    model = models.resnet18(pretrained=True)
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, 2)  # Dummy 2-class output
+    model.to(torch.device("cpu"))
+    model.eval()
+    return model
+
+# ====== LOAD SELECTED MODEL ======
+if model_choice == "Fine-Tuned ShuffleNetV2":
+    model = load_finetuned_shufflenet()
+elif model_choice == "ShuffleNetV2":
+    model = load_shufflenet()
+elif model_choice == "CNN":
+    model = load_cnn()
+
+# ====== IMAGE TRANSFORM ======
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406],
+                         [0.229, 0.224, 0.225])
+])
+
 # ====== FILE UPLOAD ======
 uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg", "png"])
 
-# Tagline below uploader (always visible)
+# Tagline below uploader
 st.markdown(
     '<p class="tagline">Upload a face image to detect deepfakes — stay aware!</p>',
     unsafe_allow_html=True
@@ -184,31 +197,29 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption='🖼 Uploaded Image')
 
+    # Analyze button
     analyze = st.button("Analyze")
 
     if analyze:
+        # Show spinner + progress bar while predicting
         with st.spinner("Analyzing picture..."):
             progress_bar = st.progress(0)
             img_tensor = transform(image).unsqueeze(0).to("cpu")
 
             for percent in range(0, 101, 20):
-                time.sleep(0.15)  # simulate progress
+                time.sleep(0.15)
                 progress_bar.progress(percent)
 
             with torch.no_grad():
                 outputs = model(img_tensor)
-                probabilities = torch.softmax(outputs, dim=1)[0].cpu().numpy()
+                probs = torch.softmax(outputs, dim=1)[0].cpu().numpy()
                 _, predicted = torch.max(outputs, 1)
                 class_names = ['Fake', 'Real']
                 pred_class = class_names[predicted.item()]
-                confidence = probabilities[predicted.item()] * 100
+                confidence = probs[predicted.item()] * 100
 
             progress_bar.progress(100)
             time.sleep(0.2)
-
-        # Show probability distribution bar chart
-        df = pd.DataFrame({'Class': class_names, 'Probability': probabilities}).set_index('Class')
-        st.bar_chart(df)
 
         # Display prediction and confidence
         color_class = "pred-real" if pred_class == "Real" else "pred-fake"
@@ -223,5 +234,20 @@ if uploaded_file is not None:
             unsafe_allow_html=True
         )
 
-# Footer disclaimer
+        # --- Probability distribution graph ---
+        fig, ax = plt.subplots()
+        bars = ax.bar(class_names, probs * 100, color=['#d32f2f', '#388e3c'])
+        ax.set_ylim([0, 100])
+        ax.set_ylabel('Probability (%)')
+        ax.set_title('Prediction Probability Distribution')
+
+        # Add data labels on top of bars
+        for bar in bars:
+            height = bar.get_height()
+            ax.annotate(f'{height:.2f}%', xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 3), textcoords="offset points", ha='center', va='bottom')
+
+        st.pyplot(fig)
+
+# ====== FOOTER ======
 st.markdown("<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>", unsafe_allow_html=True)
