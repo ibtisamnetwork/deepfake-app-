@@ -3,7 +3,7 @@ from PIL import Image
 import torch
 from torchvision import models, transforms
 import torch.nn as nn
-import time  # for optional delay (testing)
+import time
 
 # ====== PAGE CONFIG ======
 st.set_page_config(
@@ -145,17 +145,20 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ====== MAIN PREDICTION LOGIC ======
+# ====== PREDICTION LOGIC ======
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption='🖼 Uploaded Image')
 
     img_tensor = transform(image).unsqueeze(0).to("cpu")
 
-    # Show "Analyzing..." spinner during model prediction
     with st.spinner("🔄 Analyzing Picture..."):
-        # Optional: add artificial delay for demo
-        # time.sleep(2)
+        progress = st.progress(0, text="Running deepfake analysis...")
+
+        # Simulated progress update for 1 second
+        for i in range(100):
+            time.sleep(0.01)  # ~1 second total
+            progress.progress(i + 1, text="Analyzing...")
 
         with torch.no_grad():
             outputs = model(img_tensor)
@@ -176,6 +179,12 @@ if uploaded_file is not None:
         unsafe_allow_html=True
     )
 
-    st.markdown("<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>",
+        unsafe_allow_html=True
+    )
 
-       
+ 
+      
+
+   
