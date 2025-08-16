@@ -30,12 +30,12 @@ st.markdown("""
         box-shadow: 0 6px 15px rgba(75,139,190,0.4);
         margin-bottom: 1.5rem;
     }
-    /* Uploader styled like button with tooltip */
+    /* Uploader styled like button */
     div[data-testid="fileUploaderDropzone"] {
         background: #61a0af;
         border-radius: 12px;
         padding: 1.2rem;
-        margin-bottom: 2rem;
+        margin-bottom: 0.5rem;
         border: none;
         color: white;
         font-weight: 600;
@@ -43,29 +43,10 @@ st.markdown("""
         cursor: pointer;
         box-shadow: 0 4px 12px rgba(97,160,175,0.5);
         transition: background-color 0.3s ease;
-        position: relative;
     }
     div[data-testid="fileUploaderDropzone"]:hover {
         background: #468a96;
         box-shadow: 0 6px 20px rgba(70,138,150,0.7);
-    }
-    /* Tooltip text */
-    div[data-testid="fileUploaderDropzone"]:hover::after {
-        content: "Upload a face image to detect deepfakes — stay aware!";
-        position: absolute;
-        bottom: -2.5rem;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: #306998;
-        color: white;
-        padding: 0.4rem 0.8rem;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        white-space: nowrap;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-        opacity: 1;
-        pointer-events: none;
-        z-index: 999;
     }
     /* Uploaded image */
     img {
@@ -112,6 +93,15 @@ st.markdown("""
         font-size: 1.4rem;
         margin-left: 10px;
     }
+    /* Tagline below uploader */
+    .tagline {
+        text-align: center;
+        color: #555555;
+        font-style: italic;
+        margin-top: -10px;
+        margin-bottom: 25px;
+        font-size: 1rem;
+    }
     /* Footer disclaimer */
     .footer {
         font-size: 0.85rem;
@@ -154,6 +144,12 @@ st.markdown("""
 
 # ====== FILE UPLOAD ======
 uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg", "png"])
+
+# Tagline below uploader (always visible)
+st.markdown(
+    '<p class="tagline">Upload a face image to detect deepfakes — stay aware!</p>',
+    unsafe_allow_html=True
+)
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
