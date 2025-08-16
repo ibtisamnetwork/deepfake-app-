@@ -21,6 +21,7 @@ st.markdown("""
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         padding: 2rem 1rem 4rem 1rem;
     }
+    /* Gradient header background */
     .header {
         background: linear-gradient(90deg, #4B8BBE, #306998);
         padding: 2rem 1rem;
@@ -30,6 +31,7 @@ st.markdown("""
         box-shadow: 0 6px 15px rgba(75,139,190,0.4);
         margin-bottom: 1.5rem;
     }
+    /* Uploader styled like button */
     div[data-testid="fileUploaderDropzone"] {
         background: #61a0af;
         border-radius: 12px;
@@ -47,6 +49,7 @@ st.markdown("""
         background: #468a96;
         box-shadow: 0 6px 20px rgba(70,138,150,0.7);
     }
+    /* Uploaded image */
     img {
         border-radius: 12px;
         box-shadow: 0 6px 18px rgba(0,0,0,0.15);
@@ -55,6 +58,7 @@ st.markdown("""
         display: block;
         margin: 0 auto 25px auto;
     }
+    /* Result box */
     .result-box {
         background-color: #e9f0f7;
         border-radius: 15px;
@@ -67,6 +71,7 @@ st.markdown("""
         font-weight: 600;
         font-size: 1.2rem;
     }
+    /* Prediction badges */
     .pred-fake {
         color: #d32f2f;
         background-color: #ffebee;
@@ -89,6 +94,7 @@ st.markdown("""
         font-size: 1.4rem;
         margin-left: 10px;
     }
+    /* Tagline below uploader */
     .tagline {
         text-align: center;
         color: #555555;
@@ -97,6 +103,7 @@ st.markdown("""
         margin-bottom: 25px;
         font-size: 1rem;
     }
+    /* Footer disclaimer */
     .footer {
         font-size: 0.85rem;
         text-align: center;
@@ -104,9 +111,19 @@ st.markdown("""
         color: #555555;
         font-style: italic;
     }
-    .reset-button {
-        text-align: center;
-        margin-top: 1.5rem;
+    /* Reset button style */
+    .stButton>button {
+        background-color: #4B8BBE;
+        color: white;
+        border-radius: 10px;
+        padding: 0.6rem 1.4rem;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 20px;
+    }
+    .stButton>button:hover {
+        background-color: #306998;
+        color: white;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -124,6 +141,7 @@ def load_model():
 
 model = load_model()
 
+# ====== IMAGE TRANSFORMS ======
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -139,46 +157,58 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ====== SESSION STATE SETUP ======
-if "pred_class" not in st.session_state:
-    st.session_state.pred_class = None
-if "confidence" not in st.session_state:
-    st.session_state.confidence = None
-if "image" not in st.session_state:
-    st.session_state.image = None
+# ====== FILE UPLOAD ======
+uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg", "png"])
 
-# ====== FILE UPLOADER ======
-uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg", "png"], key="file_uploader")
+# Tagline below uploader (always visible)
+st.markdown(
+    '<p class="tagline">Upload a face image to detect deepfakes — stay aware!</p>',
+    unsafe_allow_html=True
+)
 
+def reset():
+    # Clear the stored prediction and uploaded image in session_state
+    for key in ["pred_class", "confidence", "image"]:
+        if key in st.session_state:
+            del st.session_state[key]
+    # Clear uploaded_file from session state so uploader resets
+    if "uploaded_file" in st.session_state:
+        del st.session_state["uploaded_file"]
+    st.experimental_rerun()
+
+# If an image is uploaded, save it in session_state to persist
 if uploaded_file is not None:
-    st.session_state.image = Image.open(uploaded_file).convert("RGB")
-    st.image(st.session_state.image, caption="🖼 Uploaded Image")
+    st.session_state.uploaded_file = uploaded_file
 
-st.markdown('<p class="tagline">Upload a face image to detect deepfakes — stay aware!</p>', unsafe_allow_html=True)
+# Use the image from session_state if exists
+if "uploaded_file" in st.session_state:
+    image = Image.open(st.session_state.uploaded_file).convert("RGB")
+    st.image(image, caption='🖼 Uploaded Image')
 
-# ====== ANALYZE BUTTON ======
-if st.session_state.image is not None:
-    if st.button("🧠 Analyze Image"):
-        with st.spinner("Processing..."):
+    # If prediction is not done yet, run model with spinner and progress bar
+    if "pred_class" not in st.session_state:
+        with st.spinner("Processing image, please wait..."):
             progress_bar = st.progress(0)
-            img_tensor = transform(st.session_state.image).unsqueeze(0).to("cpu")
-            
-            for percent_complete in range(0, 101, 20):
-                time.sleep(0.2)
+            img_tensor = transform(image).unsqueeze(0).to("cpu")
+
+            # Fake progress for smoothness
+            for percent_complete in range(0, 100, 20):
+                time.sleep(0.1)
                 progress_bar.progress(percent_complete)
-            
+
             with torch.no_grad():
                 outputs = model(img_tensor)
                 _, predicted = torch.max(outputs, 1)
                 class_names = ['Fake', 'Real']
                 st.session_state.pred_class = class_names[predicted.item()]
                 st.session_state.confidence = torch.softmax(outputs, dim=1)[0][predicted.item()] * 100
-            
-            progress_bar.empty()
 
-# ====== DISPLAY RESULT ======
-if st.session_state.pred_class is not None:
+            progress_bar.progress(100)
+            time.sleep(0.2)  # Small pause for 100% bar visibility
+
+    # Show prediction result
     color_class = "pred-real" if st.session_state.pred_class == "Real" else "pred-fake"
+
     st.markdown(
         f"""
         <div class="result-box">
@@ -189,16 +219,9 @@ if st.session_state.pred_class is not None:
         unsafe_allow_html=True
     )
 
-    # Reset button shown only after prediction
-    def reset():
-        for key in ["pred_class", "confidence", "image"]:
-            if key in st.session_state:
-                del st.session_state[key]
-        st.experimental_rerun()
-
-    st.markdown('<div class="reset-button">', unsafe_allow_html=True)
+    # Reset button
     if st.button("🔄 Reset"):
         reset()
-    st.markdown('</div>', unsafe_allow_html=True)
 
+# Footer disclaimer
 st.markdown("<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>", unsafe_allow_html=True)
