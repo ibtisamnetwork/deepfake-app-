@@ -3,6 +3,7 @@ from PIL import Image
 import torch
 from torchvision import models, transforms
 import torch.nn as nn
+import time  # for optional delay (testing)
 
 # ====== PAGE CONFIG ======
 st.set_page_config(
@@ -151,8 +152,11 @@ if uploaded_file is not None:
 
     img_tensor = transform(image).unsqueeze(0).to("cpu")
 
-    # Spinner while predicting
-    with st.spinner('🔄 Analyzing Picture...'):
+    # Show "Analyzing..." spinner during model prediction
+    with st.spinner("🔄 Analyzing Picture..."):
+        # Optional: add artificial delay for demo
+        # time.sleep(2)
+
         with torch.no_grad():
             outputs = model(img_tensor)
             _, predicted = torch.max(outputs, 1)
@@ -173,3 +177,5 @@ if uploaded_file is not None:
     )
 
     st.markdown("<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>", unsafe_allow_html=True)
+
+       
