@@ -15,7 +15,7 @@ st.set_page_config(
 st.markdown("""
 <style>
     .stApp {
-        background-color: #fefefe;
+        background-color: #f0f7ff;
         color: #222222;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         padding: 2rem 1rem 4rem 1rem;
@@ -30,7 +30,7 @@ st.markdown("""
         box-shadow: 0 6px 15px rgba(75,139,190,0.4);
         margin-bottom: 1.5rem;
     }
-    /* Uploader styled like button */
+    /* Uploader styled like button with tooltip */
     div[data-testid="fileUploaderDropzone"] {
         background: #61a0af;
         border-radius: 12px;
@@ -43,10 +43,29 @@ st.markdown("""
         cursor: pointer;
         box-shadow: 0 4px 12px rgba(97,160,175,0.5);
         transition: background-color 0.3s ease;
+        position: relative;
     }
     div[data-testid="fileUploaderDropzone"]:hover {
         background: #468a96;
         box-shadow: 0 6px 20px rgba(70,138,150,0.7);
+    }
+    /* Tooltip text */
+    div[data-testid="fileUploaderDropzone"]:hover::after {
+        content: "Upload a face image to detect deepfakes — stay aware!";
+        position: absolute;
+        bottom: -2.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #306998;
+        color: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        opacity: 1;
+        pointer-events: none;
+        z-index: 999;
     }
     /* Uploaded image */
     img {
