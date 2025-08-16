@@ -15,54 +15,77 @@ st.set_page_config(
 st.markdown("""
 <style>
     .stApp {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: #fff;
+        background-color: #f9f9f9;
+        color: #222222;
         padding: 2rem 1rem 4rem 1rem;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     /* Style uploader box */
     div[data-testid="fileUploaderDropzone"] {
-        background-color: rgba(255,255,255,0.15);
+        background-color: #ffffff;
         border-radius: 12px;
         padding: 1rem;
         margin-bottom: 1.5rem;
-        border: 2px dashed #dcd6f7;
-        color: white;
+        border: 2px dashed #cccccc;
+        color: #333333;
         font-weight: 600;
+        transition: border-color 0.3s ease;
+    }
+    div[data-testid="fileUploaderDropzone"]:hover {
+        border-color: #4b8bbe;
     }
     /* Uploaded image */
     img {
         border-radius: 12px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         display: block;
         margin-left: auto;
         margin-right: auto;
         margin-bottom: 20px;
+        max-width: 350px;
     }
     /* Result box */
     .result-box {
-        background-color: rgba(255, 255, 255, 0.15);
+        background-color: #ffffff;
         border-radius: 15px;
         padding: 1.5rem;
         max-width: 450px;
         margin: 1.5rem auto;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+        box-shadow: 0 4px 18px rgba(0,0,0,0.12);
         text-align: center;
+        color: #222222;
     }
     /* Prediction text colors */
     .pred-fake {
-        color: #f44336; /* red */
+        color: #d32f2f; /* deep red */
         font-weight: 700;
         font-size: 1.5rem;
     }
     .pred-real {
-        color: #4caf50; /* green */
+        color: #388e3c; /* deep green */
         font-weight: 700;
         font-size: 1.5rem;
     }
     /* Header styles */
     h1, p {
         text-align: center;
+        color: #222222;
+        margin-bottom: 0.25rem;
+    }
+    p.description {
+        font-size: 1.1rem;
+        color: #555555;
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+    }
+    /* Footer disclaimer */
+    .footer {
+        font-size: 0.85rem;
+        text-align: center;
+        margin-top: 2rem;
+        color: #666666;
+        font-style: italic;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -90,7 +113,7 @@ transform = transforms.Compose([
 
 # ====== HEADER ======
 st.markdown("<h1>🕵️‍♂️ DeepFake Detector</h1>", unsafe_allow_html=True)
-st.markdown("<p>Upload an image and let AI detect if it's <strong>Real</strong> or <strong>Fake</strong>.</p>", unsafe_allow_html=True)
+st.markdown("<p class='description'>Upload an image and let AI detect if it's <strong>Real</strong> or <strong>Fake</strong>.</p>", unsafe_allow_html=True)
 st.markdown("---")
 
 # ====== FILE UPLOAD ======
@@ -98,7 +121,7 @@ uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption='🖼 Uploaded Image', use_column_width=False, width=350)
+    st.image(image, caption='🖼 Uploaded Image')
 
     # ====== PREPROCESS ======
     img_tensor = transform(image).unsqueeze(0).to("cpu")
@@ -124,4 +147,10 @@ if uploaded_file is not None:
         unsafe_allow_html=True
     )
 
-    st.markdown("🔍 <i>This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</i>", unsafe_allow_html=True)
+    st.markdown("<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>", unsafe_allow_html=True)
+
+        
+    
+
+
+    
