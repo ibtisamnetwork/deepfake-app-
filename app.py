@@ -3,7 +3,6 @@ from PIL import Image
 import torch
 from torchvision import models, transforms
 import torch.nn as nn
-import time
 
 # ====== PAGE CONFIG ======
 st.set_page_config(
@@ -139,27 +138,30 @@ st.markdown("""
 # ====== FILE UPLOAD ======
 uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg", "png"])
 
-# ====== Awareness Tagline ======
+# ====== TAGLINE ======
 st.markdown(
     '<p class="tagline">Upload a face image to detect deepfakes — stay aware!</p>',
     unsafe_allow_html=True
 )
 
-# ====== PREDICTION LOGIC ======
-if uploaded_file is not None:
+# ====== SESSION STATE FOR RESET ======
+if "show_result" not in st.session_state:
+    st.session_state.show_result = False
+
+# ====== RESET BUTTON ======
+if st.session_state.show_result:
+    if st.button("🔄 Reset"):
+        st.session_state.show_result = False
+        st.experimental_rerun()
+
+# ====== PREDICTION FLOW ======
+if uploaded_file and not st.session_state.show_result:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption='🖼 Uploaded Image')
 
     img_tensor = transform(image).unsqueeze(0).to("cpu")
 
-    with st.spinner("🔄 Analyzing Picture..."):
-        progress = st.progress(0, text="Running deepfake analysis...")
-
-        # Simulated progress update for 1 second
-        for i in range(100):
-            time.sleep(0.01)  # ~1 second total
-            progress.progress(i + 1, text="Analyzing...")
-
+    with st.spinner("🧠 Processing image... Please wait."):
         with torch.no_grad():
             outputs = model(img_tensor)
             _, predicted = torch.max(outputs, 1)
@@ -179,12 +181,9 @@ if uploaded_file is not None:
         unsafe_allow_html=True
     )
 
+    st.session_state.show_result = True
+
     st.markdown(
         "<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>",
         unsafe_allow_html=True
     )
-
- 
-      
-
-   
