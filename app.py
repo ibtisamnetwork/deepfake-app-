@@ -3,6 +3,7 @@ from PIL import Image
 import torch
 from torchvision import models, transforms
 import torch.nn as nn
+import time
 
 # ====== PAGE CONFIG ======
 st.set_page_config(
@@ -104,9 +105,8 @@ st.markdown("""
         font-style: italic;
     }
     .reset-button {
-        display: flex;
-        justify-content: center;
-        margin-top: 15px;
+        text-align: center;
+        margin-top: 1.5rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -124,7 +124,6 @@ def load_model():
 
 model = load_model()
 
-# ====== IMAGE TRANSFORMS ======
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -140,60 +139,70 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ====== SESSION STATE for reset ======
-if "uploaded_file" not in st.session_state:
-    st.session_state.uploaded_file = None
+# ====== SESSION STATE SETUP ======
 if "pred_class" not in st.session_state:
     st.session_state.pred_class = None
 if "confidence" not in st.session_state:
     st.session_state.confidence = None
+if "image" not in st.session_state:
+    st.session_state.image = None
 
-# ====== File uploader with state ======
-uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg", "png"], key="uploaded_file")
+# ====== FILE UPLOADER ======
+uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg", "png"], key="file_uploader")
 
-# Tagline below uploader
 st.markdown('<p class="tagline">Upload a face image to detect deepfakes — stay aware!</p>', unsafe_allow_html=True)
 
-# ====== Prediction and display ======
 if uploaded_file is not None:
+    st.session_state.image = Image.open(uploaded_file).convert("RGB")
+    st.image(st.session_state.image, caption="🖼 Uploaded Image")
 
-    image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption='🖼 Uploaded Image')
+# ====== ANALYZE BUTTON ======
+if st.session_state.image is not None:
+    analyze_clicked = st.button("🧠 Analyze Image")
 
-    # Prediction button
-    if st.button("🧠 Analyze Image"):
+    if analyze_clicked:
         with st.spinner("Processing..."):
-            img_tensor = transform(image).unsqueeze(0).to("cpu")
+            progress_bar = st.progress(0)
+            img_tensor = transform(st.session_state.image).unsqueeze(0).to("cpu")
+            
+            # Simulate progress
+            for percent_complete in range(0, 101, 20):
+                time.sleep(0.2)
+                progress_bar.progress(percent_complete)
+            
             with torch.no_grad():
                 outputs = model(img_tensor)
                 _, predicted = torch.max(outputs, 1)
                 class_names = ['Fake', 'Real']
                 st.session_state.pred_class = class_names[predicted.item()]
                 st.session_state.confidence = torch.softmax(outputs, dim=1)[0][predicted.item()] * 100
+            
+            progress_bar.empty()
 
-    # Show result if available
-    if st.session_state.pred_class is not None:
-        color_class = "pred-real" if st.session_state.pred_class == "Real" else "pred-fake"
-        st.markdown(
-            f"""
-            <div class="result-box">
-                <span>🧠 Prediction:</span> <span class="{color_class}">{st.session_state.pred_class}</span>
-                <p>Confidence: <strong>{st.session_state.confidence:.2f}%</strong></p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+# ====== DISPLAY RESULT ======
+if st.session_state.pred_class is not None:
+    color_class = "pred-real" if st.session_state.pred_class == "Real" else "pred-fake"
+    st.markdown(
+        f"""
+        <div class="result-box">
+            <span>🧠 Prediction:</span> <span class="{color_class}">{st.session_state.pred_class}</span>
+            <p>Confidence: <strong>{st.session_state.confidence:.2f}%</strong></p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-# ====== Reset button always visible ======
+# ====== RESET BUTTON ======
 def reset():
-    st.session_state.uploaded_file = None
     st.session_state.pred_class = None
     st.session_state.confidence = None
+    st.session_state.image = None
+    st.session_state.file_uploader = None
+    st.experimental_rerun()
 
 st.markdown('<div class="reset-button">', unsafe_allow_html=True)
 if st.button("🔄 Reset"):
     reset()
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ====== Footer disclaimer ======
 st.markdown("<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>", unsafe_allow_html=True)
