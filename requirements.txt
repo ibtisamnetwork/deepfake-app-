@@ -2,3 +2,4 @@ streamlit
 Pillow
 torch
 torchvision
+torchcam
