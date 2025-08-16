@@ -1,4 +1,5 @@
-import streamlit as st
+
+             import streamlit as st
 from PIL import Image
 import torch
 from torchvision import models, transforms
@@ -124,27 +125,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ====== LOAD MODEL ======
-@st.cache_resource
-def load_model():
-    model = models.shufflenet_v2_x1_0(pretrained=False)
-    num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, 2)
-    model.load_state_dict(torch.load("best_shufflenet.pth", map_location=torch.device("cpu")))
-    model.to(torch.device("cpu"))
-    model.eval()
-    return model
-
-model = load_model()
-
-# ====== IMAGE TRANSFORMS ======
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406],
-                         [0.229, 0.224, 0.225])
-])
-
 # ====== HEADER ======
 st.markdown("""
 <div class="header">
@@ -153,10 +133,61 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# ====== MODEL SELECTION ======
+model_choice = st.selectbox(
+    "🔍 Select a model",
+    ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"]
+)
+
+# ====== MODEL LOADING FUNCTIONS ======
+@st.cache_resource
+def load_finetuned_shufflenet():
+    model = models.shufflenet_v2_x1_0(pretrained=False)
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, 2)
+    model.load_state_dict(torch.load("best_shufflenet.pth", map_location=torch.device("cpu")))
+    model.to(torch.device("cpu"))
+    model.eval()
+    return model
+
+@st.cache_resource
+def load_shufflenet():
+    model = models.shufflenet_v2_x1_0(pretrained=True)
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, 2)  # Dummy 2-class output
+    model.to(torch.device("cpu"))
+    model.eval()
+    return model
+
+@st.cache_resource
+def load_cnn():
+    model = models.resnet18(pretrained=True)
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, 2)  # Dummy 2-class output
+    model.to(torch.device("cpu"))
+    model.eval()
+    return model
+
+# ====== LOAD SELECTED MODEL ======
+if model_choice == "Fine-Tuned ShuffleNetV2":
+    model = load_finetuned_shufflenet()
+elif model_choice == "ShuffleNetV2":
+    model = load_shufflenet()
+elif model_choice == "CNN":
+    model = load_cnn()
+
+# ====== IMAGE TRANSFORM ======
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406],
+                         [0.229, 0.224, 0.225])
+])
+
 # ====== FILE UPLOAD ======
 uploaded_file = st.file_uploader("📤 Choose an image file", type=["jpg", "jpeg", "png"])
 
-# Tagline below uploader (always visible)
+# Tagline below uploader
 st.markdown(
     '<p class="tagline">Upload a face image to detect deepfakes — stay aware!</p>',
     unsafe_allow_html=True
@@ -176,7 +207,7 @@ if uploaded_file is not None:
             img_tensor = transform(image).unsqueeze(0).to("cpu")
 
             for percent in range(0, 101, 20):
-                time.sleep(0.15)  # simulate progress
+                time.sleep(0.15)
                 progress_bar.progress(percent)
 
             with torch.no_grad():
@@ -202,5 +233,5 @@ if uploaded_file is not None:
             unsafe_allow_html=True
         )
 
-# Footer disclaimer
+# ====== FOOTER ======
 st.markdown("<div class='footer'>🔍 This result is based on the uploaded image and may not be perfect. Always verify with additional tools.</div>", unsafe_allow_html=True)
