@@ -19,26 +19,21 @@ st.markdown("""
         color: #fff;
     }
     .header {
-        background: rgba(255, 255, 255, 0.15);
-        padding: 25px;
-        border-radius: 20px;
-        margin-bottom: 25px;
         text-align: center;
-        backdrop-filter: blur(10px);
-        box-shadow: 0px 6px 20px rgba(0,0,0,0.25);
+        margin-bottom: 1.5rem;
     }
     .header h1 {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin: 0;
-        color: white;
-        text-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+        font-weight: 700;
+        font-size: 2.4rem;
+        margin-bottom: 0.3rem;
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
     }
     .header p {
         font-size: 1.1rem;
-        margin-top: 10px;
-        color: #f1f1f1;
         font-weight: 400;
+        margin-top: 0;
+        color: #f1f1f1;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
     }
     .result-box {
         padding: 15px 20px;
@@ -66,6 +61,14 @@ st.markdown("""
         border-radius: 10px;
     }
 </style>
+""", unsafe_allow_html=True)
+
+# ================= HEADER =================
+st.markdown("""
+<div class="header">
+    <h1>🕵️‍♂️ DeepFake Detection Tool</h1>
+    <p><i>AI-Powered Defense Against Digital Deception</i></p>
+</div>
 """, unsafe_allow_html=True)
 
 # ================= MODEL LOADING =================
@@ -108,13 +111,7 @@ def predict_image(image, model):
         pred_class = np.argmax(probs)
     return pred_class, probs
 
-# ================= HEADER =================
-st.markdown("""
-<div class="header">
-    <h1>🕵️‍♂️ DeepFake Detection Tool</h1>
-    <p>Upload an image and detect whether it's <b>Real</b> or <b>Fake</b> using state-of-the-art AI models.</p>
-</div>
-""", unsafe_allow_html=True)
+# ================= UI =================
 
 # Init uploader_key for reset
 if "uploader_key" not in st.session_state:
@@ -128,8 +125,7 @@ with col1:
                                      key=f"uploader_{st.session_state.uploader_key}")
 
     model_choice = st.selectbox("🤖 Select Model",
-                                ["Select a model", "Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"],
-                                key="model_choice")
+                                ["Select a model", "Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
 
     analyze_clicked = st.button("🔍 Analyze")
     accuracy_clicked = st.button("📊 Show Accuracy")
@@ -208,10 +204,9 @@ if cm_clicked:
     else:
         st.session_state.cm = np.array([[70, 10], [8, 72]])
 
-# Reset: clears everything including uploaded file + model selection
+# Reset: clears everything including uploaded file + model choice
 if reset_clicked:
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.session_state.uploader_key = st.session_state.get("uploader_key", 0) + 1
-    st.session_state.model_choice = "Select a model"
     st.rerun()
