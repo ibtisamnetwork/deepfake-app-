@@ -37,6 +37,11 @@ st.markdown("""
         text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
         margin-bottom: 20px;
     }
+    .centered-image {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 15px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -103,9 +108,11 @@ with col1:
     reset_clicked = st.button("🔄 Reset")
 
 with col2:
-    # Show uploaded image in small preview
+    # Show uploaded image in small centered preview
     if uploaded_file is not None:
+        st.markdown('<div class="centered-image">', unsafe_allow_html=True)
         st.image(uploaded_file, caption="Uploaded Image", width=250)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     if "prediction" in st.session_state:
         st.markdown(
