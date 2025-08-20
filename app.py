@@ -18,13 +18,27 @@ st.markdown("""
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #fff;
     }
-    h1 {
+    .header {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 25px;
+        border-radius: 20px;
+        margin-bottom: 25px;
         text-align: center;
-        font-weight: 700;
-        font-size: 2.2rem;
-        margin-top: 0.2rem;
-        margin-bottom: 1rem;
-        text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        backdrop-filter: blur(10px);
+        box-shadow: 0px 6px 20px rgba(0,0,0,0.25);
+    }
+    .header h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 0;
+        color: white;
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+    }
+    .header p {
+        font-size: 1.1rem;
+        margin-top: 10px;
+        color: #f1f1f1;
+        font-weight: 400;
     }
     .result-box {
         padding: 15px 20px;
@@ -94,8 +108,13 @@ def predict_image(image, model):
         pred_class = np.argmax(probs)
     return pred_class, probs
 
-# ================= UI =================
-st.title("🕵️‍♂️ DeepFake Detection Tool")
+# ================= HEADER =================
+st.markdown("""
+<div class="header">
+    <h1>🕵️‍♂️ DeepFake Detection Tool</h1>
+    <p>Upload an image and detect whether it's <b>Real</b> or <b>Fake</b> using state-of-the-art AI models.</p>
+</div>
+""", unsafe_allow_html=True)
 
 # Init uploader_key for reset
 if "uploader_key" not in st.session_state:
