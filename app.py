@@ -23,15 +23,16 @@ st.markdown("""
         font-weight: 700;
         font-size: 2.2rem;
         margin-top: 0.2rem;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.3rem;
         text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
     }
     h3 {
         text-align: center;
-        font-weight: 500;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
+        font-weight: 400;
         margin-bottom: 1.5rem;
         color: #f0f0f0;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
     }
     .result-box {
         padding: 15px 20px;
@@ -44,12 +45,13 @@ st.markdown("""
         text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
         margin-bottom: 20px;
     }
+    .image-box {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
 </style>
 """, unsafe_allow_html=True)
-
-# ================= HEADER =================
-st.title("🕵️‍♂️ DeepFake Detection Tool")
-st.markdown("<h3>AI-Powered Defense Against Digital Deception</h3>", unsafe_allow_html=True)
 
 # ================= MODEL LOADING =================
 @st.cache_resource
@@ -91,13 +93,17 @@ def predict_image(image, model):
         pred_class = np.argmax(probs)
     return pred_class, probs
 
-# ================= SESSION STATE INIT =================
+# ================= UI =================
+st.title("🕵️‍♂️ DeepFake Detection Tool")
+st.markdown("<h3>AI-Powered Defense Against Digital Deception</h3>", unsafe_allow_html=True)
+
+# Init uploader_key for reset
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
 if "model_choice" not in st.session_state:
     st.session_state.model_choice = "Select a model"
 
-# ================= LAYOUT =================
+# Layout: two columns (left controls, right results)
 col1, col2 = st.columns([1, 1])
 
 with col1:
@@ -120,10 +126,12 @@ with col1:
     reset_clicked = st.button("🔄 Reset")
 
 with col2:
-    # Show uploaded image in smaller size (centered)
+    # Uploaded image in smaller size
     if uploaded_file is not None and "clear_image" not in st.session_state:
         image = Image.open(uploaded_file).convert("RGB")
-        st.image(image, caption="Uploaded Image", use_column_width=False, width=250)
+        st.markdown('<div class="image-box">', unsafe_allow_html=True)
+        st.image(image, caption="Uploaded Image", width=200)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     if "prediction" in st.session_state:
         st.markdown(
@@ -156,15 +164,15 @@ with col2:
 if analyze_clicked:
     if uploaded_file is None:
         st.warning("⚠️ Please upload an image before analyzing.")
-    elif st.session_state.model_choice == "Select a model":
+    elif model_choice == "Select a model":
         st.warning("⚠️ Please select a model before analyzing.")
     else:
         image = Image.open(uploaded_file).convert("RGB")
-        if st.session_state.model_choice == "Fine-Tuned ShuffleNetV2":
+        if model_choice == "Fine-Tuned ShuffleNetV2":
             model = load_finetuned_shufflenet()
-        elif st.session_state.model_choice == "ShuffleNetV2":
+        elif model_choice == "ShuffleNetV2":
             model = load_shufflenet()
-        elif st.session_state.model_choice == "CNN":
+        elif model_choice == "CNN":
             model = load_cnn()
         pred_class, probs = predict_image(image, model)
         st.session_state.prediction = "Real" if pred_class == 1 else "Fake"
@@ -172,7 +180,7 @@ if analyze_clicked:
         st.session_state.probs = probs
 
 if accuracy_clicked:
-    if st.session_state.model_choice == "Select a model":
+    if model_choice == "Select a model":
         st.warning("⚠️ Please select a model first.")
     else:
         model_acc = {
@@ -180,19 +188,18 @@ if accuracy_clicked:
             "ShuffleNetV2": 85.7,
             "CNN": 83.2
         }
-        st.session_state.accuracy = model_acc.get(st.session_state.model_choice, 80.0)
+        st.session_state.accuracy = model_acc.get(model_choice, 80.0)
 
 if cm_clicked:
-    if st.session_state.model_choice == "Select a model":
+    if model_choice == "Select a model":
         st.warning("⚠️ Please select a model first.")
     else:
         st.session_state.cm = np.array([[70, 10], [8, 72]])
 
-# ================= RESET =================
+# Reset: clears everything including uploaded file + model
 if reset_clicked:
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.session_state.uploader_key = st.session_state.get("uploader_key", 0) + 1
     st.session_state.model_choice = "Select a model"
-    st.session_state.clear_image = True
     st.rerun()
