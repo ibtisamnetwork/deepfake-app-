@@ -132,15 +132,25 @@ def predict_image(image, model):
 # ================= UI =================
 st.title("🕵️‍♂️ DeepFake Detection Tool")
 
-# --- New Styled Tagline with Divider ---
+# --- New Gradient Tagline with Glow + Hover ---
 st.markdown("""
-<div style="display:flex; align-items:center; justify-content:center; margin: 10px 0;">
-    <hr style="flex:1; border:none; border-top:2px solid #ffe066; opacity:0.6;">
-    <span style="padding: 0 12px; font-size:1.1rem; font-weight:bold; color:#ffe066;">
+<div style="display:flex; align-items:center; justify-content:center; margin: 12px 0;">
+    <hr style="flex:1; border:none; height:3px; background:linear-gradient(to right, #ffe066, #ff7eb3, #6a11cb); border-radius:5px; opacity:0.85;">
+    <span style="padding: 0 15px; font-size:1.2rem; font-weight:bold; color:#ffe066; 
+                 text-shadow:0 0 8px rgba(255,224,102,0.7), 0 0 12px rgba(255,224,102,0.5);
+                 transition:all 0.3s ease-in-out; cursor:default;">
         Unmasking DeepFakes with AI — Upload, Detect, Trust
     </span>
-    <hr style="flex:1; border:none; border-top:2px solid #ffe066; opacity:0.6;">
+    <hr style="flex:1; border:none; height:3px; background:linear-gradient(to left, #ffe066, #ff7eb3, #6a11cb); border-radius:5px; opacity:0.85;">
 </div>
+
+<style>
+    div span:hover {
+        color:#fff176 !important;
+        transform:scale(1.05);
+        text-shadow:0 0 10px rgba(255,255,200,0.9), 0 0 15px rgba(255,255,150,0.6);
+    }
+</style>
 """, unsafe_allow_html=True)
 
 # Init uploader_key for reset
