@@ -132,7 +132,7 @@ def predict_image(image, model):
 # ================= UI =================
 st.title("🕵️‍♂️ DeepFake Detection Tool")
 
-# --- New Gradient Tagline with Glow + Hover ---
+# --- Tagline with Glow ---
 st.markdown("""
 <div style="display:flex; align-items:center; justify-content:center; margin: 12px 0;">
     <hr style="flex:1; border:none; height:3px; background:linear-gradient(to right, #ffe066, #ff7eb3, #6a11cb); border-radius:5px; opacity:0.85;">
@@ -156,6 +156,8 @@ st.markdown("""
 # Init uploader_key for reset
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
+if "model_choice" not in st.session_state:
+    st.session_state.model_choice = "Select a model"
 
 # Layout: two columns (left controls, right results)
 col1, col2 = st.columns([1, 1])
@@ -164,8 +166,11 @@ with col1:
     uploaded_file = st.file_uploader("📂 Upload an Image", type=["jpg", "jpeg", "png"],
                                      key=f"uploader_{st.session_state.uploader_key}")
 
-    model_choice = st.selectbox("🤖 Select Model",
-                                ["Select a model", "Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
+    model_choice = st.selectbox(
+        "🤖 Select Model",
+        ["Select a model", "Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"],
+        key="model_choice"
+    )
 
     # Buttons in one row
     btn_col1, btn_col2, btn_col3, btn_col4 = st.columns(4)
@@ -255,5 +260,6 @@ if cm_clicked:
 if reset_clicked:
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    st.session_state.uploader_key = st.session_state.get("uploader_key", 0) + 1
+    st.session_state.uploader_key = 0
+    st.session_state.model_choice = "Select a model"
     st.rerun()
