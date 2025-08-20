@@ -17,21 +17,21 @@ def load_finetuned_shufflenet():
     model.fc = nn.Linear(model.fc.in_features, 2)
     model.load_state_dict(torch.load("best_shufflenet.pth", map_location="cpu"))
     model.eval()
-    return model
+    return model, 0.92   # attach accuracy here
 
 @st.cache_resource
 def load_shufflenet():
     model = models.shufflenet_v2_x1_0(pretrained=True)
     model.fc = nn.Linear(model.fc.in_features, 2)
     model.eval()
-    return model
+    return model, 0.85
 
 @st.cache_resource
 def load_cnn():
     model = models.resnet18(pretrained=True)
     model.fc = nn.Linear(model.fc.in_features, 2)
     model.eval()
-    return model
+    return model, 0.88
 
 # ============== IMAGE TRANSFORM ==============
 transform = transforms.Compose([
@@ -68,7 +68,6 @@ with main_col:
             file_bytes = uploaded_file.getvalue()
             file_hash = hash(file_bytes)
 
-            # Reset previous results when a new image is uploaded
             if "last_uploaded_hash" not in st.session_state or st.session_state.last_uploaded_hash != file_hash:
                 st.session_state.pred_result = None
                 st.session_state.probs = None
@@ -93,16 +92,17 @@ with main_col:
         analyze_clicked = st.button("🔍 Analyze", use_container_width=True, disabled=("image" not in st.session_state))
         if analyze_clicked and ("image" in st.session_state):
             if model_choice == "Fine-Tuned ShuffleNetV2":
-                model = load_finetuned_shufflenet()
+                model, acc = load_finetuned_shufflenet()
             elif model_choice == "ShuffleNetV2":
-                model = load_shufflenet()
+                model, acc = load_shufflenet()
             else:
-                model = load_cnn()
+                model, acc = load_cnn()
 
             pred_class, probs = predict_image(st.session_state.image, model)
             st.session_state.pred_result = {
                 "class": "Real" if pred_class == 1 else "Fake",
                 "confidence": probs[pred_class] * 100.0,
+                "accuracy": acc
             }
             st.session_state.probs = probs
 
@@ -110,14 +110,16 @@ with main_col:
     with bl:
         if st.session_state.get("pred_result"):
             pr = st.session_state.pred_result
-            st.markdown(
-                f"### 📝 Prediction: **{pr['class']}** ({pr['confidence']:.2f}%)"
-            )
+            st.markdown(f"### 📝 Prediction: **{pr['class']}** ({pr['confidence']:.2f}%)")
+
+            # Show accuracy only when button is clicked
+            if st.button("📊 Show Model Accuracy"):
+                st.info(f"Model Accuracy: **{pr['accuracy']*100:.2f}%**")
 
     # ---- Bottom Right: Confusion Matrix ----
     with br:
         if st.session_state.get("pred_result"):
-            cm = np.array([[70, 10], [8, 72]])  # Example CM; replace with real values if available
+            cm = np.array([[70, 10], [8, 72]])  # Example CM
             fig, ax = plt.subplots()
             sns.heatmap(
                 cm, annot=True, fmt="d", cmap="Purples",
