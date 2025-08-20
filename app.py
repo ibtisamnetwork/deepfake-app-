@@ -32,19 +32,6 @@ st.markdown("""
         text-shadow: 3px 3px 8px rgba(0,0,0,0.6);
         transform: scale(1.05);
     }
-    h3 {
-        text-align: center;
-        font-size: 1.1rem;
-        font-weight: 400;
-        margin-bottom: 1.5rem;
-        color: #f0f0f0;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
-        transition: all 0.3s ease-in-out;
-    }
-    h3:hover {
-        color: #ffd6ff;
-        transform: scale(1.05);
-    }
     .result-box {
         padding: 15px 20px;
         background: rgba(255, 255, 255, 0.15);
@@ -145,13 +132,15 @@ def predict_image(image, model):
 # ================= UI =================
 st.title("🕵️‍♂️ DeepFake Detection Tool")
 
-# Tagline with horizontal lines
+# --- New Styled Tagline with Divider ---
 st.markdown("""
-<hr style="border: 1px solid white; opacity: 0.6;">
-<h3 style='text-align:center; color:#ffe066;'>
-Unmasking DeepFakes with AI — Upload, Detect, Trust.
-</h3>
-<hr style="border: 1px solid white; opacity: 0.6;">
+<div style="display:flex; align-items:center; justify-content:center; margin: 10px 0;">
+    <hr style="flex:1; border:none; border-top:2px solid #ffe066; opacity:0.6;">
+    <span style="padding: 0 12px; font-size:1.1rem; font-weight:bold; color:#ffe066;">
+        Unmasking DeepFakes with AI — Upload, Detect, Trust
+    </span>
+    <hr style="flex:1; border:none; border-top:2px solid #ffe066; opacity:0.6;">
+</div>
 """, unsafe_allow_html=True)
 
 # Init uploader_key for reset
@@ -168,10 +157,16 @@ with col1:
     model_choice = st.selectbox("🤖 Select Model",
                                 ["Select a model", "Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
 
-    analyze_clicked = st.button("🔍 Analyze")
-    accuracy_clicked = st.button("📊 Show Accuracy")
-    cm_clicked = st.button("🧩 Show Confusion Matrix")
-    reset_clicked = st.button("🔄 Reset")
+    # Buttons in one row
+    btn_col1, btn_col2, btn_col3, btn_col4 = st.columns(4)
+    with btn_col1:
+        analyze_clicked = st.button("🔍 Analyze")
+    with btn_col2:
+        accuracy_clicked = st.button("📊 Accuracy")
+    with btn_col3:
+        cm_clicked = st.button("🧩 Conf Matrix")
+    with btn_col4:
+        reset_clicked = st.button("🔄 Reset")
 
 with col2:
     # Show uploaded image smaller and centered
