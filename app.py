@@ -6,6 +6,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import time
 
 # ====== CONFIG ======
 st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️", layout="wide")
@@ -17,52 +18,42 @@ st.markdown("""
         background: linear-gradient(135deg, #71b7e6, #9b59b6);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #fff;
+        padding-bottom: 40px;
     }
-
-    /* Title */
     h1 {
         text-align: center;
         font-weight: 700;
         font-size: 2.8rem;
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
         text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
     }
-
-    /* Prediction panel */
-    .prediction-card {
-        background: rgba(255,255,255,0.15);
+    .uploaded-image {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 25px;
         border-radius: 20px;
-        padding: 25px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-        text-align: center;
-        margin-top: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        max-width: 450px;
+        margin-left: auto;
+        margin-right: auto;
     }
-    .prediction-title {
-        font-size: 1.6rem;
+    .result-box {
+        max-width: 460px;
+        margin: 20px auto;
+        padding: 20px 25px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
         font-weight: 700;
-        margin-bottom: 15px;
-    }
-    .prediction-result {
         font-size: 1.3rem;
-        font-weight: 600;
-        margin-top: 10px;
-        margin-bottom: 20px;
+        text-align: center;
+        color: #fff;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
     }
-
-    /* Buttons */
-    button.stButton > button {
-        background-color: #6a11cb;
-        color: white;
-        font-weight: 600;
-        padding: 0.6rem 1.6rem;
-        font-size: 1rem;
-        border-radius: 12px;
-        box-shadow: 0 5px 20px rgba(107, 17, 203, 0.5);
-        transition: 0.3s ease;
-        min-width: 150px;
-    }
-    button.stButton > button:hover {
-        background-color: #8e2de2;
-        transform: scale(1.05);
+    img {
+        border-radius: 20px;
+        box-shadow: 0 12px 35px rgba(0,0,0,0.5);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -113,25 +104,52 @@ def predict_image(image, model):
 # ====== UI STARTS ======
 st.title("🕵️‍♂️ DeepFake Detection Tool")
 
-# Layout: Left side controls (grid), Right side prediction panel
-left_col, right_col = st.columns([2, 1])
+# Layout grid
+top_left, top_right = st.columns(2)
+bottom_left, bottom_right = st.columns(2)
+right_panel = st.container()
 
-with left_col:
-    top_left, top_right = st.columns(2)
-    bottom_left, bottom_right = st.columns(2)
-
-    # --- Upload image ---
-    uploaded_file = top_left.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
+# Step 1: Upload Image
+with top_left:
+    uploaded_file = st.file_uploader("📤 Upload an Image", type=["jpg", "jpeg", "png"])
     if uploaded_file:
         image = Image.open(uploaded_file).convert("RGB")
+        st.image(image, use_column_width=True)
         st.session_state.image = image
-        top_left.image(image, caption="Uploaded Image", use_column_width=True)
 
-    # --- Model choice ---
-    with top_right:
-        model_choice = st.selectbox("Choose Model", ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
-        if ("model_choice" not in st.session_state) or (st.session_state.model_choice != model_choice):
-            st.session_state.model_choice = model_choice
+# Step 2: Select Model
+with top_right:
+    model_choice = st.selectbox("🧠 Choose Model",
+                                ["-- Select a Model --", "Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
+
+# Step 3: Action Buttons
+with bottom_left:
+    analyze_clicked = st.button("🔍 Analyze")
+    acc_clicked = st.button("📈 Show Accuracy")
+
+with bottom_right:
+    cm_clicked = st.button("🧩 Show Confusion Matrix")
+
+# Reset button appears only after prediction
+if st.session_state.get("show_reset", False):
+    if st.button("🔄 Reset"):
+        st.session_state.clear()
+        st.rerun()
+
+# Handle button clicks
+if analyze_clicked:
+    if "image" not in st.session_state:
+        st.warning("⚠️ Please upload an image before analyzing.")
+    elif model_choice == "-- Select a Model --":
+        st.warning("⚠️ Please select a model before analyzing.")
+    else:
+        with st.spinner("🔎 Analyzing image... Please wait..."):
+            progress_bar = st.progress(0)
+            for percent in range(0, 101, 10):
+                time.sleep(0.1)  # fake delay
+                progress_bar.progress(percent)
+
+            # Load selected model
             if model_choice == "Fine-Tuned ShuffleNetV2":
                 st.session_state.model = load_finetuned_shufflenet()
             elif model_choice == "ShuffleNetV2":
@@ -139,70 +157,46 @@ with left_col:
             elif model_choice == "CNN":
                 st.session_state.model = load_cnn()
 
-        analyze_clicked = st.button("🔍 Analyze")
+            # Predict
+            pred_class, probs = predict_image(st.session_state.image, st.session_state.model)
+            st.session_state.pred_result = {
+                "class": "Real" if pred_class == 1 else "Fake",
+                "confidence": probs[pred_class] * 100,
+                "probs": probs
+            }
+            st.session_state.show_reset = True
 
-    # --- Accuracy button ---
-    with bottom_left:
-        accuracy_clicked = st.button("📈 Show Accuracy")
-
-    # --- Confusion matrix button ---
-    with bottom_right:
-        cm_clicked = st.button("🧩 Show Confusion Matrix")
-
-
-with right_col:
-    # Prediction Panel
-    if "pred_result" in st.session_state:
-        st.markdown('<div class="prediction-card">', unsafe_allow_html=True)
-        st.markdown('<div class="prediction-title">Prediction Result</div>', unsafe_allow_html=True)
-
-        result = st.session_state.pred_result
-        st.markdown(f'<div class="prediction-result">{result["class"]} ({result["confidence"]:.2f}%)</div>',
-                    unsafe_allow_html=True)
-
-        # Show probability bar graph
-        fig, ax = plt.subplots()
-        labels = ["Fake", "Real"]
-        sns.barplot(x=labels, y=result["probs"], ax=ax, palette="Purples")
-        ax.set_ylim(0, 1)
-        ax.set_ylabel("Probability")
-        st.pyplot(fig)
-
-        # Reset button
-        if st.button("🔄 Reset"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
-
-# ====== Handle Button Clicks ======
-if uploaded_file and "model" in st.session_state:
-    if analyze_clicked:
-        pred_class, probs = predict_image(st.session_state.image, st.session_state.model)
-        st.session_state.pred_result = {
-            "class": "Real" if pred_class == 1 else "Fake",
-            "confidence": probs[pred_class] * 100,
-            "probs": probs
-        }
+        st.success("✅ Analysis complete!")
         st.rerun()
 
-    if accuracy_clicked:
-        model_acc = {
-            "Fine-Tuned ShuffleNetV2": 91.3,
-            "ShuffleNetV2": 85.7,
-            "CNN": 83.2
-        }
-        selected_acc = model_acc.get(st.session_state.model_choice, 80.0)
-        bottom_left.metric(label="📊 Model Accuracy", value=f"{selected_acc:.2f}%")
+# Right panel results
+with right_panel:
+    if "pred_result" in st.session_state:
+        result = st.session_state.pred_result
+        st.markdown(
+            f'<div class="result-box">Prediction: {result["class"]} ({result["confidence"]:.2f}%)</div>',
+            unsafe_allow_html=True
+        )
 
-    if cm_clicked:
-        cm = np.array([[70, 10], [8, 72]])  # Dummy CM
+        # Probability bar graph
         fig, ax = plt.subplots()
-        sns.heatmap(cm, annot=True, fmt="d", cmap="Purples",
-                    xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
-                    cbar=False, linewidths=1, linecolor='white')
-        plt.xlabel("Predicted")
-        plt.ylabel("Actual")
-        plt.title("Confusion Matrix")
-        bottom_right.pyplot(fig)
+        ax.bar(["Fake", "Real"], result["probs"], color=["red", "green"])
+        ax.set_ylabel("Probability")
+        ax.set_title("Prediction Probabilities")
+        st.pyplot(fig)
+
+# Show Accuracy
+if acc_clicked:
+    st.info("📊 Accuracy feature will be displayed here (custom per dataset).")
+
+# Show Confusion Matrix
+if cm_clicked:
+    cm = np.array([[70, 10], [8, 72]])  # Example
+    fig, ax = plt.subplots()
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Purples",
+                xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
+                cbar=False, linewidths=1, linecolor='white')
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.title("Confusion Matrix")
+    st.pyplot(fig)
