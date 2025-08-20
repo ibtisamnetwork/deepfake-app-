@@ -11,65 +11,60 @@ import seaborn as sns
 st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️", layout="wide")
 
 # ================= CUSTOM CSS =================
-st.markdown("""
-<style>
-    .stApp {
-        background: linear-gradient(135deg, #71b7e6, #9b59b6);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        color: #fff;
-    }
-    .header {
-        text-align: center;
-        margin-bottom: 1.5rem;
-    }
-    .header h1 {
-        font-weight: 700;
-        font-size: 2.4rem;
-        margin-bottom: 0.3rem;
-        text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-    }
-    .header p {
-        font-size: 1.1rem;
-        font-weight: 400;
-        margin-top: 0;
-        color: #f1f1f1;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
-    }
-    .result-box {
-        padding: 15px 20px;
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 15px;
-        font-weight: 700;
-        font-size: 1.1rem;
-        text-align: center;
-        color: #fff;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
-        margin-bottom: 20px;
-    }
-    .card {
-        background: rgba(255, 255, 255, 0.15);
-        padding: 20px;
-        border-radius: 20px;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    .card img {
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
-        border-radius: 10px;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# ================= HEADER =================
-st.markdown("""
-<div class="header">
-    <h1>🕵️‍♂️ DeepFake Detection Tool</h1>
-    <p><i>AI-Powered Defense Against Digital Deception</i></p>
-</div>
-""", unsafe_allow_html=True)
+st.markdown(
+    """
+    <style>
+        .stApp {
+            background: linear-gradient(135deg, #71b7e6, #9b59b6);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .header h1 {
+            font-weight: 700;
+            font-size: 2.4rem;
+            margin-bottom: 0.3rem;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+        .header p {
+            font-size: 1.1rem;
+            font-weight: 400;
+            margin-top: 0;
+            color: #f1f1f1;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+        }
+        .result-box {
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-align: center;
+            color: #fff;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+            margin-bottom: 20px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .card img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 10px;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # ================= MODEL LOADING =================
 @st.cache_resource
@@ -111,7 +106,16 @@ def predict_image(image, model):
         pred_class = np.argmax(probs)
     return pred_class, probs
 
-# ================= UI =================
+# ================= HEADER =================
+st.markdown(
+    """
+    <div class="header">
+        <h1>🕵️‍♂️ DeepFake Detection Tool</h1>
+        <p>AI-Powered Defense Against Digital Deception</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 # Init uploader_key for reset
 if "uploader_key" not in st.session_state:
@@ -133,40 +137,36 @@ with col1:
     reset_clicked = st.button("🔄 Reset")
 
 with col2:
-    with st.container():
-        st.markdown('<div class="card">', unsafe_allow_html=True)
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file).convert("RGB")
+        st.image(image, caption="Uploaded Image", use_container_width=False, width=250)
 
-        if uploaded_file is not None:
-            st.image(uploaded_file, caption="Uploaded Image", width=250)
+    if "prediction" in st.session_state:
+        st.markdown(
+            f'<div class="result-box">Prediction: {st.session_state.prediction} '
+            f'({st.session_state.confidence:.2f}%)</div>', unsafe_allow_html=True)
 
-        if "prediction" in st.session_state:
-            st.markdown(
-                f'<div class="result-box">Prediction: {st.session_state.prediction} '
-                f'({st.session_state.confidence:.2f}%)</div>', unsafe_allow_html=True)
+    if "probs" in st.session_state:
+        fig, ax = plt.subplots()
+        classes = ["Fake", "Real"]
+        ax.bar(classes, st.session_state.probs, color=["crimson", "limegreen"])
+        ax.set_ylim([0, 1])
+        ax.set_ylabel("Probability")
+        ax.set_title("Prediction Probabilities")
+        st.pyplot(fig)
 
-        if "probs" in st.session_state:
-            fig, ax = plt.subplots()
-            classes = ["Fake", "Real"]
-            ax.bar(classes, st.session_state.probs, color=["crimson", "limegreen"])
-            ax.set_ylim([0, 1])
-            ax.set_ylabel("Probability")
-            ax.set_title("Prediction Probabilities")
-            st.pyplot(fig)
+    if "accuracy" in st.session_state:
+        st.metric(label="📊 Model Accuracy", value=f"{st.session_state.accuracy:.2f}%")
 
-        if "accuracy" in st.session_state:
-            st.metric(label="📊 Model Accuracy", value=f"{st.session_state.accuracy:.2f}%")
-
-        if "cm" in st.session_state:
-            fig, ax = plt.subplots()
-            sns.heatmap(st.session_state.cm, annot=True, fmt="d", cmap="Purples",
-                        xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
-                        cbar=False, linewidths=1, linecolor='white')
-            plt.xlabel("Predicted")
-            plt.ylabel("Actual")
-            plt.title("Confusion Matrix")
-            st.pyplot(fig)
-
-        st.markdown('</div>', unsafe_allow_html=True)
+    if "cm" in st.session_state:
+        fig, ax = plt.subplots()
+        sns.heatmap(st.session_state.cm, annot=True, fmt="d", cmap="Purples",
+                    xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
+                    cbar=False, linewidths=1, linecolor='white')
+        plt.xlabel("Predicted")
+        plt.ylabel("Actual")
+        plt.title("Confusion Matrix")
+        st.pyplot(fig)
 
 # ================= LOGIC =================
 if analyze_clicked:
@@ -204,7 +204,7 @@ if cm_clicked:
     else:
         st.session_state.cm = np.array([[70, 10], [8, 72]])
 
-# Reset: clears everything including uploaded file + model choice
+# Reset: clears everything including uploaded file + model selection
 if reset_clicked:
     for key in list(st.session_state.keys()):
         del st.session_state[key]
