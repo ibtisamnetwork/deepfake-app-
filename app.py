@@ -37,6 +37,20 @@ st.markdown("""
         text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
         margin-bottom: 20px;
     }
+    .card {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 20px;
+        border-radius: 20px;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .card img {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 10px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -86,8 +100,6 @@ st.title("🕵️‍♂️ DeepFake Detection Tool")
 # Init uploader_key for reset
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
-if "model_choice" not in st.session_state:
-    st.session_state.model_choice = "Select a model"
 
 # Layout: two columns (left controls, right results)
 col1, col2 = st.columns([1, 1])
@@ -96,11 +108,9 @@ with col1:
     uploaded_file = st.file_uploader("📂 Upload an Image", type=["jpg", "jpeg", "png"],
                                      key=f"uploader_{st.session_state.uploader_key}")
 
-    model_choice = st.selectbox(
-        "🤖 Select Model",
-        ["Select a model", "Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"],
-        key="model_choice"
-    )
+    model_choice = st.selectbox("🤖 Select Model",
+                                ["Select a model", "Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"],
+                                key="model_choice")
 
     analyze_clicked = st.button("🔍 Analyze")
     accuracy_clicked = st.button("📊 Show Accuracy")
@@ -108,35 +118,40 @@ with col1:
     reset_clicked = st.button("🔄 Reset")
 
 with col2:
-    if uploaded_file is not None:
-        st.image(uploaded_file, caption="Uploaded Image", width=250)   # 👈 Small centered preview
+    with st.container():
+        st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    if "prediction" in st.session_state:
-        st.markdown(
-            f'<div class="result-box">Prediction: {st.session_state.prediction} '
-            f'({st.session_state.confidence:.2f}%)</div>', unsafe_allow_html=True)
+        if uploaded_file is not None:
+            st.image(uploaded_file, caption="Uploaded Image", width=250)
 
-    if "probs" in st.session_state:
-        fig, ax = plt.subplots()
-        classes = ["Fake", "Real"]
-        ax.bar(classes, st.session_state.probs, color=["crimson", "limegreen"])
-        ax.set_ylim([0, 1])
-        ax.set_ylabel("Probability")
-        ax.set_title("Prediction Probabilities")
-        st.pyplot(fig)
+        if "prediction" in st.session_state:
+            st.markdown(
+                f'<div class="result-box">Prediction: {st.session_state.prediction} '
+                f'({st.session_state.confidence:.2f}%)</div>', unsafe_allow_html=True)
 
-    if "accuracy" in st.session_state:
-        st.metric(label="📊 Model Accuracy", value=f"{st.session_state.accuracy:.2f}%")
+        if "probs" in st.session_state:
+            fig, ax = plt.subplots()
+            classes = ["Fake", "Real"]
+            ax.bar(classes, st.session_state.probs, color=["crimson", "limegreen"])
+            ax.set_ylim([0, 1])
+            ax.set_ylabel("Probability")
+            ax.set_title("Prediction Probabilities")
+            st.pyplot(fig)
 
-    if "cm" in st.session_state:
-        fig, ax = plt.subplots()
-        sns.heatmap(st.session_state.cm, annot=True, fmt="d", cmap="Purples",
-                    xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
-                    cbar=False, linewidths=1, linecolor='white')
-        plt.xlabel("Predicted")
-        plt.ylabel("Actual")
-        plt.title("Confusion Matrix")
-        st.pyplot(fig)
+        if "accuracy" in st.session_state:
+            st.metric(label="📊 Model Accuracy", value=f"{st.session_state.accuracy:.2f}%")
+
+        if "cm" in st.session_state:
+            fig, ax = plt.subplots()
+            sns.heatmap(st.session_state.cm, annot=True, fmt="d", cmap="Purples",
+                        xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
+                        cbar=False, linewidths=1, linecolor='white')
+            plt.xlabel("Predicted")
+            plt.ylabel("Actual")
+            plt.title("Confusion Matrix")
+            st.pyplot(fig)
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # ================= LOGIC =================
 if analyze_clicked:
@@ -174,7 +189,7 @@ if cm_clicked:
     else:
         st.session_state.cm = np.array([[70, 10], [8, 72]])
 
-# Reset: clears everything including uploaded file and model
+# Reset: clears everything including uploaded file + model selection
 if reset_clicked:
     for key in list(st.session_state.keys()):
         del st.session_state[key]
