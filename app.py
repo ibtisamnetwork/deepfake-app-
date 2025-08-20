@@ -103,6 +103,10 @@ with col1:
     reset_clicked = st.button("🔄 Reset")
 
 with col2:
+    # Show uploaded image in small preview
+    if uploaded_file is not None:
+        st.image(uploaded_file, caption="Uploaded Image", width=250)
+
     if "prediction" in st.session_state:
         st.markdown(
             f'<div class="result-box">Prediction: {st.session_state.prediction} '
