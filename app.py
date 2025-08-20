@@ -10,6 +10,48 @@ import seaborn as sns
 # ====== CONFIG ======
 st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️", layout="wide")
 
+# ====== CUSTOM CSS ======
+st.markdown("""
+<style>
+/* Make sidebar cleaner */
+[data-testid="stSidebar"] {
+    background-color: #f8f9fa;
+    padding: 20px;
+}
+
+/* Card style for results */
+.result-card {
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+    margin: 20px 0;
+}
+
+/* Fake = red card */
+.fake {
+    background-color: #ffe5e5;
+    color: #b30000;
+    border: 2px solid #ff4d4d;
+}
+
+/* Real = green card */
+.real {
+    background-color: #e6ffed;
+    color: #006600;
+    border: 2px solid #00cc66;
+}
+
+/* Section headers */
+h2 {
+    margin-top: 20px;
+    color: #333333;
+    font-weight: 600;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ====== MODEL LOADING ======
 @st.cache_resource
 def load_finetuned_shufflenet():
@@ -41,7 +83,6 @@ transform = transforms.Compose([
                          [0.229, 0.224, 0.225])
 ])
 
-# ====== PREDICT ======
 def predict_image(image, model):
     img_tensor = transform(image).unsqueeze(0)
     with torch.no_grad():
@@ -51,15 +92,12 @@ def predict_image(image, model):
     return pred_class, probs
 
 # ====== SIDEBAR ======
-st.sidebar.title("🕵️‍♂️ DeepFake Detector")
-st.sidebar.markdown("### Controls")
-
+st.sidebar.title("⚙️ Controls")
 uploaded_file = st.sidebar.file_uploader("📤 Upload Image", type=["jpg", "jpeg", "png"])
 
 model_choice = st.sidebar.selectbox("🧠 Choose Model", 
                                     ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
 
-# Load model based on choice
 if "model_choice" not in st.session_state or st.session_state.model_choice != model_choice:
     st.session_state.model_choice = model_choice
     if model_choice == "Fine-Tuned ShuffleNetV2":
@@ -73,14 +111,13 @@ analyze_clicked = st.sidebar.button("🔍 Analyze")
 accuracy_clicked = st.sidebar.button("📈 Show Accuracy")
 cm_clicked = st.sidebar.button("🧩 Show Confusion Matrix")
 
-# ====== MAIN CONTENT ======
-st.title("DeepFake Detection Dashboard")
+# ====== MAIN ======
+st.markdown("<h1 style='text-align:center;'>🕵️‍♂️ DeepFake Detection Dashboard</h1>", unsafe_allow_html=True)
 
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
     st.session_state.image = image
 
-    # Analyze
     if analyze_clicked:
         pred_class, probs = predict_image(st.session_state.image, st.session_state.model)
         st.session_state.pred_result = {
@@ -89,23 +126,28 @@ if uploaded_file:
             "probs": probs
         }
 
-    # Show prediction result card
+    # Prediction result as styled card
     if "pred_result" in st.session_state:
         result = st.session_state.pred_result
-        color = "🟢" if result["class"] == "Real" else "🔴"
-        st.markdown(
-            f"<div style='text-align:center; font-size:24px; font-weight:bold; "
-            f"padding:20px; border-radius:15px; background:rgba(0,0,0,0.05);'>"
-            f"{color} Prediction: {result['class']} "
-            f"({result['confidence']:.2f}%)</div>", 
-            unsafe_allow_html=True
-        )
+        if result["class"] == "Real":
+            st.markdown(
+                f"<div class='result-card real'>🟢 Prediction: {result['class']} "
+                f"({result['confidence']:.2f}%)</div>", 
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                f"<div class='result-card fake'>🔴 Prediction: {result['class']} "
+                f"({result['confidence']:.2f}%)</div>", 
+                unsafe_allow_html=True
+            )
 
-        # Show uploaded image
-        st.image(st.session_state.image, caption="Uploaded Image", use_container_width=True)
+        # Uploaded image
+        st.subheader("🖼 Uploaded Image")
+        st.image(st.session_state.image, use_container_width=True)
 
-        # Probability graph (right panel style)
-        st.subheader("📊 Probability Graph")
+        # Probability plot
+        st.subheader("📊 Prediction Probabilities")
         fig, ax = plt.subplots()
         classes = ["Fake", "Real"]
         probs = result["probs"]
@@ -114,18 +156,17 @@ if uploaded_file:
         ax.set_ylabel("Probability")
         st.pyplot(fig)
 
-    # Show accuracy
     if accuracy_clicked:
         model_acc = {
             "Fine-Tuned ShuffleNetV2": 91.3,
             "ShuffleNetV2": 85.7,
             "CNN": 83.2
         }
-        selected_acc = model_acc.get(st.session_state.model_choice, 80.0)
-        st.metric(label="📈 Model Accuracy", value=f"{selected_acc:.2f}%")
+        st.subheader("📈 Model Accuracy")
+        st.metric(label="Accuracy", value=f"{model_acc[st.session_state.model_choice]:.2f}%")
 
-    # Show confusion matrix
     if cm_clicked:
+        st.subheader("🧩 Confusion Matrix")
         cm = np.array([[70, 10], [8, 72]])  
         fig, ax = plt.subplots()
         sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", 
@@ -137,4 +178,4 @@ if uploaded_file:
         st.pyplot(fig)
 
 else:
-    st.info("👆 Please upload an image from the sidebar to begin analysis.")
+    st.info("👆 Upload an image from the sidebar to start analysis.")
