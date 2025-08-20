@@ -7,17 +7,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-# ============== CONFIG ==============
+# ================= CONFIG =================
 st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️", layout="wide")
 
-# ============== MODEL LOADING ==============
+# ================= MODEL LOADING =================
 @st.cache_resource
 def load_finetuned_shufflenet():
     model = models.shufflenet_v2_x1_0(pretrained=False)
     model.fc = nn.Linear(model.fc.in_features, 2)
     model.load_state_dict(torch.load("best_shufflenet.pth", map_location="cpu"))
     model.eval()
-    return model, 0.92   # attach accuracy here
+    return model, 0.92   # accuracy placeholder
 
 @st.cache_resource
 def load_shufflenet():
@@ -33,7 +33,7 @@ def load_cnn():
     model.eval()
     return model, 0.88
 
-# ============== IMAGE TRANSFORM ==============
+# ================= TRANSFORM =================
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -49,22 +49,21 @@ def predict_image(image, model):
         pred_class = np.argmax(probs)
     return pred_class, probs
 
-# ============== UI ==============
-st.title("🕵️‍♂️ DeepFake Detection Tool")
+# ================= HEADER =================
+st.markdown("<h1 style='text-align:center;'>🕵️‍♂️ DeepFake Detection Dashboard</h1>", unsafe_allow_html=True)
+st.write("---")
 
-# Overall layout: Left main area (2x2 grid) + Right-side plots panel
-main_col, plots_col = st.columns([3, 1], gap="large")
+# ================= LAYOUT =================
+main_col, side_col = st.columns([3, 1], gap="large")
 
 with main_col:
-    # 2x2 grid
-    tl, tr = st.columns(2)   # top-left, top-right
-    bl, br = st.columns(2)   # bottom-left, bottom-right
+    # ---- Upload + Model Selection ----
+    st.subheader("📤 Step 1: Upload Image & Choose Model")
+    upload_col, model_col = st.columns(2)
 
-    # ---- Top Left: Upload Image ----
-    with tl:
-        uploaded_file = st.file_uploader("📤 Upload an Image", type=["jpg", "jpeg", "png"], key="uploader")
+    with upload_col:
+        uploaded_file = st.file_uploader("Upload an Image", type=["jpg", "jpeg", "png"], key="uploader")
         if uploaded_file:
-            # Detect new upload by hashing bytes (works even if filename is the same)
             file_bytes = uploaded_file.getvalue()
             file_hash = hash(file_bytes)
 
@@ -77,13 +76,12 @@ with main_col:
             st.session_state.image = image
             st.image(image, caption="Uploaded Image", use_container_width=True)
 
-    # ---- Top Right: Model Selection + Analyze ----
-    with tr:
+    with model_col:
         if "model_choice" not in st.session_state:
             st.session_state.model_choice = "Fine-Tuned ShuffleNetV2"
 
         model_choice = st.selectbox(
-            "🤖 Choose Model",
+            "Select Model",
             ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"],
             index=["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"].index(st.session_state.model_choice)
         )
@@ -106,42 +104,46 @@ with main_col:
             }
             st.session_state.probs = probs
 
-    # ---- Bottom Left: Prediction Result ----
-    with bl:
+    st.write("---")
+
+    # ---- Prediction Results ----
+    st.subheader("📝 Step 2: Results")
+    res_col1, res_col2 = st.columns(2)
+
+    with res_col1:
         if st.session_state.get("pred_result"):
             pr = st.session_state.pred_result
-            st.markdown(f"### 📝 Prediction: **{pr['class']}** ({pr['confidence']:.2f}%)")
+            st.success(f"**Prediction:** {pr['class']} ({pr['confidence']:.2f}%)")
 
-            # Show accuracy only when button is clicked
+            # Accuracy button
             if st.button("📊 Show Model Accuracy"):
                 st.info(f"Model Accuracy: **{pr['accuracy']*100:.2f}%**")
 
-    # ---- Bottom Right: Confusion Matrix ----
-    with br:
+    with res_col2:
         if st.session_state.get("pred_result"):
-            cm = np.array([[70, 10], [8, 72]])  # Example CM
-            fig, ax = plt.subplots()
-            sns.heatmap(
-                cm, annot=True, fmt="d", cmap="Purples",
-                xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
-                cbar=False, linewidths=1, linecolor='white', ax=ax
-            )
-            ax.set_xlabel("Predicted")
-            ax.set_ylabel("Actual")
-            ax.set_title("Confusion Matrix")
-            st.pyplot(fig)
+            if st.button("📉 Show Confusion Matrix"):
+                cm = np.array([[70, 10], [8, 72]])  # Example matrix
+                fig, ax = plt.subplots()
+                sns.heatmap(
+                    cm, annot=True, fmt="d", cmap="Purples",
+                    xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
+                    cbar=False, linewidths=1, linecolor='white', ax=ax
+                )
+                ax.set_xlabel("Predicted")
+                ax.set_ylabel("Actual")
+                ax.set_title("Confusion Matrix")
+                st.pyplot(fig)
 
-# ---- Right-Side Plots Panel ----
-with plots_col:
-    st.subheader("📈 Plots")
+with side_col:
+    st.subheader("📈 Step 3: Probability Plot")
     if st.session_state.get("probs") is not None:
         probs = st.session_state.probs
         labels = ["Fake", "Real"]
         fig, ax = plt.subplots()
-        ax.bar(labels, probs)
+        ax.bar(labels, probs, color=["#d62728", "#2ca02c"])
         ax.set_ylim(0, 1)
         ax.set_ylabel("Probability")
         ax.set_title("Prediction Probabilities")
         st.pyplot(fig)
     else:
-        st.info("Run **Analyze** to view plots.")
+        st.info("Run **Analyze** to view probability distribution.")
