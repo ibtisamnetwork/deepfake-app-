@@ -25,6 +25,12 @@ st.markdown("""
         margin-top: 0.2rem;
         margin-bottom: 0.3rem;
         text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        transition: all 0.3s ease-in-out;
+    }
+    h1:hover {
+        color: #ffe066;
+        text-shadow: 3px 3px 8px rgba(0,0,0,0.6);
+        transform: scale(1.05);
     }
     h3 {
         text-align: center;
@@ -33,6 +39,11 @@ st.markdown("""
         margin-bottom: 1.5rem;
         color: #f0f0f0;
         text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+        transition: all 0.3s ease-in-out;
+    }
+    h3:hover {
+        color: #ffd6ff;
+        transform: scale(1.05);
     }
     .result-box {
         padding: 15px 20px;
@@ -44,11 +55,49 @@ st.markdown("""
         color: #fff;
         text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
         margin-bottom: 20px;
+        transition: all 0.3s ease-in-out;
+    }
+    .result-box:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(1.05);
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+    }
+    .accuracy-box {
+        padding: 12px 18px;
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 1.05rem;
+        text-align: center;
+        color: #ffe066;
+        margin-top: 15px;
+        transition: all 0.3s ease-in-out;
+    }
+    .accuracy-box:hover {
+        background: rgba(0, 0, 0, 0.4);
+        color: #fff176;
+        transform: scale(1.05);
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.4);
     }
     .image-box {
         display: flex;
         justify-content: center;
         margin-bottom: 20px;
+        transition: transform 0.3s ease-in-out;
+    }
+    .image-box:hover {
+        transform: scale(1.05);
+    }
+    /* Buttons hover */
+    div.stButton > button {
+        transition: all 0.3s ease-in-out;
+        font-weight: bold;
+    }
+    div.stButton > button:hover {
+        background-color: #ffcc00 !important;
+        color: black !important;
+        transform: scale(1.05);
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -95,30 +144,21 @@ def predict_image(image, model):
 
 # ================= UI =================
 st.title("🕵️‍♂️ DeepFake Detection Tool")
-st.markdown("<h3>AI-Powered Defense Against Digital Deception</h3>", unsafe_allow_html=True)
+st.markdown("<h3>Upload an image and choose a model to detect if it's Real or Fake.</h3>", unsafe_allow_html=True)
 
 # Init uploader_key for reset
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
-if "model_choice" not in st.session_state:
-    st.session_state.model_choice = "Select a model"
 
 # Layout: two columns (left controls, right results)
 col1, col2 = st.columns([1, 1])
 
 with col1:
-    uploaded_file = st.file_uploader(
-        "📂 Upload an Image",
-        type=["jpg", "jpeg", "png"],
-        key=f"uploader_{st.session_state.uploader_key}"
-    )
+    uploaded_file = st.file_uploader("📂 Upload an Image", type=["jpg", "jpeg", "png"],
+                                     key=f"uploader_{st.session_state.uploader_key}")
 
-    model_choice = st.selectbox(
-        "🤖 Select Model",
-        ["Select a model", "Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"],
-        index=["Select a model", "Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"].index(st.session_state.model_choice),
-        key="model_choice"
-    )
+    model_choice = st.selectbox("🤖 Select Model",
+                                ["Select a model", "Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
 
     analyze_clicked = st.button("🔍 Analyze")
     accuracy_clicked = st.button("📊 Show Accuracy")
@@ -126,11 +166,11 @@ with col1:
     reset_clicked = st.button("🔄 Reset")
 
 with col2:
-    # Uploaded image in smaller size
-    if uploaded_file is not None and "clear_image" not in st.session_state:
+    # Show uploaded image smaller and centered
+    if uploaded_file is not None:
         image = Image.open(uploaded_file).convert("RGB")
         st.markdown('<div class="image-box">', unsafe_allow_html=True)
-        st.image(image, caption="Uploaded Image", width=200)
+        st.image(image, caption="Uploaded Image", use_column_width=False, width=220)
         st.markdown('</div>', unsafe_allow_html=True)
 
     if "prediction" in st.session_state:
@@ -139,7 +179,7 @@ with col2:
             f'({st.session_state.confidence:.2f}%)</div>', unsafe_allow_html=True)
 
     if "probs" in st.session_state:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(3, 3))
         classes = ["Fake", "Real"]
         ax.bar(classes, st.session_state.probs, color=["crimson", "limegreen"])
         ax.set_ylim([0, 1])
@@ -148,10 +188,13 @@ with col2:
         st.pyplot(fig)
 
     if "accuracy" in st.session_state:
-        st.metric(label="📊 Model Accuracy", value=f"{st.session_state.accuracy:.2f}%")
+        st.markdown(
+            f'<div class="accuracy-box">📊 Model Accuracy: {st.session_state.accuracy:.2f}%</div>',
+            unsafe_allow_html=True
+        )
 
     if "cm" in st.session_state:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(3, 3))  # smaller confusion matrix
         sns.heatmap(st.session_state.cm, annot=True, fmt="d", cmap="Purples",
                     xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
                     cbar=False, linewidths=1, linecolor='white')
@@ -167,7 +210,6 @@ if analyze_clicked:
     elif model_choice == "Select a model":
         st.warning("⚠️ Please select a model before analyzing.")
     else:
-        image = Image.open(uploaded_file).convert("RGB")
         if model_choice == "Fine-Tuned ShuffleNetV2":
             model = load_finetuned_shufflenet()
         elif model_choice == "ShuffleNetV2":
@@ -196,10 +238,9 @@ if cm_clicked:
     else:
         st.session_state.cm = np.array([[70, 10], [8, 72]])
 
-# Reset: clears everything including uploaded file + model
+# Reset: clears everything including uploaded file and model choice
 if reset_clicked:
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.session_state.uploader_key = st.session_state.get("uploader_key", 0) + 1
-    st.session_state.model_choice = "Select a model"
     st.rerun()
