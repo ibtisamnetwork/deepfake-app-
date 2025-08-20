@@ -13,11 +13,14 @@ st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️",
 # ================= CUSTOM CSS =================
 st.markdown("""
 <style>
+    /* Background gradient */
     .stApp {
         background: linear-gradient(135deg, #141e30, #243b55);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #fff;
     }
+
+    /* Title */
     h1 {
         text-align: center;
         font-weight: 800;
@@ -27,14 +30,25 @@ st.markdown("""
         text-shadow: 2px 2px 10px rgba(0,0,0,0.7);
         letter-spacing: 1px;
     }
+
+    /* Sticky tagline */
     .tagline {
         text-align: center;
         font-size: 1.2rem;
         font-weight: 600;
         color: #ffcc70;
+        padding: 10px;
         margin-bottom: 1.8rem;
         text-shadow: 0 0 10px rgba(255,204,112,0.8);
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(6px);
+        border-radius: 8px;
+        position: sticky;
+        top: 0;
+        z-index: 999;
     }
+
+    /* Result & Accuracy Boxes (Glassmorphism + Glow) */
     .result-box, .accuracy-box {
         padding: 18px;
         border-radius: 15px;
@@ -42,50 +56,79 @@ st.markdown("""
         font-size: 1.2rem;
         text-align: center;
         color: white;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
+        box-shadow: 0px 4px 20px rgba(0,0,0,0.5);
         margin-bottom: 15px;
-        transition: all 0.3s ease-in-out;
+        transition: all 0.4s ease-in-out;
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255,255,255,0.2);
+        animation: fadeIn 1s ease-in-out;
     }
     .result-box {
-        background: linear-gradient(135deg, #ff758c, #ff7eb3);
+        background: linear-gradient(135deg, rgba(255,117,140,0.8), rgba(255,126,179,0.8));
+        border-left: 5px solid #ffcc70;
     }
     .accuracy-box {
-        background: linear-gradient(135deg, #36d1dc, #5b86e5);
+        background: linear-gradient(135deg, rgba(54,209,220,0.8), rgba(91,134,229,0.8));
         font-size: 1.1rem;
+        border-left: 5px solid #36d1dc;
     }
     .result-box:hover, .accuracy-box:hover {
         transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(255,255,255,0.3);
     }
+
+    /* Uploaded Image */
     .uploaded-img {
         border-radius: 12px;
         box-shadow: 0px 6px 16px rgba(0,0,0,0.5);
         border: 3px solid #ffcc70;
         margin: auto;
         display: block;
+        transition: transform 0.3s ease-in-out;
     }
+    .uploaded-img:hover {
+        transform: scale(1.08);
+    }
+
+    /* Buttons */
     div.stButton > button {
-        border-radius: 10px;
+        border-radius: 12px;
         font-weight: bold;
-        padding: 0.6rem 1.2rem;
-        background: linear-gradient(135deg, #ffcc00, #ff9900);
+        padding: 0.7rem 1.4rem;
+        background: linear-gradient(145deg, #ffcc00, #ff9900);
         color: black;
         border: none;
-        box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
+        box-shadow: 5px 5px 15px #0f172a, -5px -5px 15px #1e293b;
         transition: all 0.3s ease-in-out;
     }
     div.stButton > button:hover {
-        background: linear-gradient(135deg, #ff9900, #ffcc00);
-        transform: scale(1.05);
+        background: linear-gradient(145deg, #ff9900, #ffcc00);
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 0 15px rgba(255,204,0,0.7);
     }
+
+    /* File Uploader */
     .stFileUploader {
         background: rgba(255,255,255,0.1);
         border: 2px dashed #ffcc70;
         border-radius: 12px;
         padding: 1rem;
+        transition: border 0.3s ease-in-out;
     }
+    .stFileUploader:hover {
+        border: 2px solid #ff9900;
+    }
+
+    /* HR line */
     hr {
         margin: 1rem 0;
         border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    /* Fade-in animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -132,7 +175,7 @@ def predict_image(image, model):
 
 # ================= UI =================
 st.title("🕵️‍♂️ DeepFake Detection Tool")
-st.markdown('<div class="tagline">Unmasking DeepFakes with AI — Upload, Detect, Trust</div>', unsafe_allow_html=True)
+st.markdown('<div class="tagline">✨ Unmasking DeepFakes with AI — Upload, Detect, Trust ✨</div>', unsafe_allow_html=True)
 st.markdown("<hr>", unsafe_allow_html=True)
 
 # Init session_state
