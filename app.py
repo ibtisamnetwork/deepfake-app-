@@ -144,7 +144,15 @@ def predict_image(image, model):
 
 # ================= UI =================
 st.title("🕵️‍♂️ DeepFake Detection Tool")
-st.markdown("<h3>Upload an image and choose a model to detect if it's Real or Fake.</h3>", unsafe_allow_html=True)
+
+# Tagline with horizontal lines
+st.markdown("""
+<hr style="border: 1px solid white; opacity: 0.6;">
+<h3 style='text-align:center; color:#ffe066;'>
+Unmasking DeepFakes with AI — Upload, Detect, Trust.
+</h3>
+<hr style="border: 1px solid white; opacity: 0.6;">
+""", unsafe_allow_html=True)
 
 # Init uploader_key for reset
 if "uploader_key" not in st.session_state:
