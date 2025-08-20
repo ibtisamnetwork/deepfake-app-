@@ -65,11 +65,6 @@ st.markdown("""
     .accuracy-box:hover {
         transform: scale(1.05);
     }
-    .image-box {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 20px;
-    }
     .uploaded-img {
         border-radius: 20px;
         box-shadow: 0px 6px 16px rgba(0,0,0,0.5);
@@ -169,42 +164,49 @@ with col1:
         reset_clicked = st.button("🔄 Reset")
 
 with col2:
-    # Show uploaded image (smaller size)
+    right_top, right_bottom = st.columns(2)
+
+    # Uploaded Image (smaller, left of panel)
     if uploaded_file is not None:
         image = Image.open(uploaded_file).convert("RGB")
-        st.markdown('<div class="image-box">', unsafe_allow_html=True)
-        st.image(image, caption="Uploaded Image", use_column_width=False, width=160, output_format="PNG")
-        st.markdown('</div>', unsafe_allow_html=True)
+        with right_top:
+            st.image(image, caption="Uploaded Image", use_column_width=False, width=160, output_format="PNG")
 
+    # Prediction
     if "prediction" in st.session_state:
         st.markdown(
             f'<div class="result-box">Prediction: {st.session_state.prediction} '
             f'({st.session_state.confidence:.2f}%)</div>', unsafe_allow_html=True)
 
+    # Probabilities graph (right side)
     if "probs" in st.session_state:
-        fig, ax = plt.subplots(figsize=(2.5, 2.5))
-        classes = ["Fake", "Real"]
-        ax.bar(classes, st.session_state.probs, color=["crimson", "limegreen"])
-        ax.set_ylim([0, 1])
-        ax.set_ylabel("Probability")
-        ax.set_title("Prediction Probabilities")
-        st.pyplot(fig)
+        with right_bottom:
+            fig, ax = plt.subplots(figsize=(2.5, 2.5))
+            classes = ["Fake", "Real"]
+            ax.bar(classes, st.session_state.probs, color=["crimson", "limegreen"])
+            ax.set_ylim([0, 1])
+            ax.set_ylabel("Probability")
+            ax.set_title("Prediction Probabilities")
+            st.pyplot(fig)
 
+    # Accuracy (below predictions)
     if "accuracy" in st.session_state:
         st.markdown(
             f'<div class="accuracy-box">📊 Model Accuracy: {st.session_state.accuracy:.2f}%</div>',
             unsafe_allow_html=True
         )
 
+    # Confusion Matrix (smaller, right side)
     if "cm" in st.session_state:
-        fig, ax = plt.subplots(figsize=(2.5, 2.5))   # 🔹 Smaller confusion matrix
-        sns.heatmap(st.session_state.cm, annot=True, fmt="d", cmap="Purples",
-                    xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
-                    cbar=False, linewidths=1, linecolor='white')
-        plt.xlabel("Predicted")
-        plt.ylabel("Actual")
-        plt.title("Confusion Matrix")
-        st.pyplot(fig)
+        with right_bottom:
+            fig, ax = plt.subplots(figsize=(2.5, 2.5))
+            sns.heatmap(st.session_state.cm, annot=True, fmt="d", cmap="Purples",
+                        xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
+                        cbar=False, linewidths=1, linecolor='white')
+            plt.xlabel("Predicted")
+            plt.ylabel("Actual")
+            plt.title("Confusion Matrix")
+            st.pyplot(fig)
 
 # ================= LOGIC =================
 if analyze_clicked:
@@ -248,3 +250,4 @@ if reset_clicked:
     st.session_state.uploader_key = st.session_state.get("uploader_key", 0) + 1
     st.session_state.model_choice = "Select a model"
     st.rerun()
+
