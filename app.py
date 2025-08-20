@@ -68,13 +68,6 @@ uploaded_file = st.sidebar.file_uploader("📤 Upload Image", type=["jpg", "jpeg
 model_choice = st.sidebar.selectbox("🧠 Choose Model", 
                                     ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
 
-# Reset button clears session state
-if st.sidebar.button("🔄 Upload New Image"):
-    for key in ["image", "pred_result"]:
-        if key in st.session_state:
-            del st.session_state[key]
-    st.rerun()
-
 if "model_choice" not in st.session_state or st.session_state.model_choice != model_choice:
     st.session_state.model_choice = model_choice
     if model_choice == "Fine-Tuned ShuffleNetV2":
@@ -124,6 +117,13 @@ if uploaded_file:
         ax.set_ylim([0, 1])
         ax.set_ylabel("Probability")
         st.pyplot(fig)
+
+        # 🔄 Reset button appears only after prediction
+        if st.button("🔄 Reset & Upload New Image"):
+            for key in ["image", "pred_result"]:
+                if key in st.session_state:
+                    del st.session_state[key]
+            st.rerun()
 
     if accuracy_clicked:
         model_acc = {
