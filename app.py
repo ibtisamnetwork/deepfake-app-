@@ -78,6 +78,7 @@ with top_right:
         st.session_state.model_choice = "Fine-Tuned ShuffleNetV2"
 
     model_choice = st.selectbox("🤖 Choose Model", ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
+    st.session_state.model_choice = model_choice
 
     if st.button("🔍 Analyze") and "image" in st.session_state:
         if model_choice == "Fine-Tuned ShuffleNetV2":
@@ -94,17 +95,9 @@ with top_right:
         }
         st.session_state.probs = probs
 
-# ---- Bottom Left: Show Accuracy ----
+# ---- Bottom Left: Prediction Result ----
 with bottom_left:
     if st.session_state.get("pred_result"):
-        model_acc = {
-            "Fine-Tuned ShuffleNetV2": 91.3,
-            "ShuffleNetV2": 85.7,
-            "CNN": 83.2
-        }
-        selected_acc = model_acc.get(model_choice, 80.0)
-        st.metric(label="📊 Model Accuracy", value=f"{selected_acc:.2f}%")
-
         st.markdown(
             f"### 📝 Prediction: {st.session_state.pred_result['class']} "
             f"({st.session_state.pred_result['confidence']:.2f}%)"
@@ -125,12 +118,13 @@ with bottom_right:
         plt.title("Confusion Matrix")
         st.pyplot(fig)
 
-# ---- Extra Right-Side Panel: Probability Graph ----
+# ---- Full-Width Row: Probability Graph ----
 if st.session_state.get("probs") is not None:
-    st.sidebar.markdown("### 📊 Probability Graph")
+    st.markdown("---")
+    st.subheader("📊 Prediction Probabilities")
     probs = st.session_state.probs
     fig, ax = plt.subplots()
     ax.bar(["Fake", "Real"], probs, color=["crimson", "seagreen"])
     ax.set_ylabel("Probability")
     ax.set_ylim(0, 1)
-    st.sidebar.pyplot(fig)
+    st.pyplot(fig)
