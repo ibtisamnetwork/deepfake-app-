@@ -4,3 +4,5 @@ torch
 torchvision
 torchcam
 pandas
+seaborn
+
