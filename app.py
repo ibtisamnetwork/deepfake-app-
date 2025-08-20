@@ -14,7 +14,7 @@ st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️",
 st.markdown("""
 <style>
     .stApp {
-        background: linear-gradient(135deg, #1f1c2c, #928DAB);
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #fff;
     }
@@ -24,57 +24,56 @@ st.markdown("""
         font-size: 2.6rem;
         margin-top: 0.2rem;
         margin-bottom: 0.5rem;
-        text-shadow: 3px 3px 12px rgba(0,0,0,0.5);
+        text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
         letter-spacing: 1px;
-        background: linear-gradient(90deg, #ff758c, #ff7eb3, #42e695, #3bb2b8);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
     }
     .tagline {
         text-align: center;
-        font-size: 1.3rem;
+        font-size: 1.2rem;
         font-weight: 600;
         color: #ffe066;
-        margin-bottom: 1.5rem;
-        text-shadow: 0 0 12px rgba(255,224,102,0.9);
-        animation: glow 2s ease-in-out infinite alternate;
-    }
-    @keyframes glow {
-        from { text-shadow: 0 0 8px #ffe066; }
-        to { text-shadow: 0 0 18px #ffcc00; }
+        margin-bottom: 1.8rem;
+        text-shadow: 0 0 10px rgba(255,224,102,0.7);
     }
     .result-box {
-        padding: 16px;
+        padding: 18px;
         background: linear-gradient(135deg, #ff7eb3, #ff758c);
         border-radius: 15px;
         font-weight: 700;
         font-size: 1.2rem;
         text-align: center;
         color: white;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.5);
-        margin-bottom: 18px;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
+        margin-bottom: 15px;
         transition: all 0.3s ease-in-out;
     }
-    .result-box:hover { transform: scale(1.05); }
+    .result-box:hover {
+        transform: scale(1.05);
+    }
     .accuracy-box {
-        padding: 12px;
+        padding: 14px;
         background: linear-gradient(135deg, #36d1dc, #5b86e5);
         border-radius: 12px;
         font-weight: bold;
         font-size: 1.1rem;
         text-align: center;
         color: #fff;
-        margin-top: 12px;
+        margin-top: 10px;
         box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
         transition: all 0.3s ease-in-out;
     }
-    .accuracy-box:hover { transform: scale(1.05); }
-    .uploaded-img {
-        border-radius: 16px;
-        box-shadow: 0px 6px 16px rgba(0,0,0,0.6);
-        transition: transform 0.3s ease-in-out;
+    .accuracy-box:hover {
+        transform: scale(1.05);
     }
-    .uploaded-img:hover { transform: scale(1.05); }
+    .uploaded-img {
+        border-radius: 20px;
+        box-shadow: 0px 6px 16px rgba(0,0,0,0.5);
+        transition: transform 0.3s ease-in-out;
+        margin-bottom: 15px;
+    }
+    .uploaded-img:hover {
+        transform: scale(1.05);
+    }
     div.stButton > button {
         border-radius: 10px;
         font-weight: bold;
@@ -82,12 +81,16 @@ st.markdown("""
         background: linear-gradient(135deg, #ffcc00, #ff9900);
         color: black;
         border: none;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
         transition: all 0.3s ease-in-out;
     }
     div.stButton > button:hover {
         background: linear-gradient(135deg, #ff9900, #ffcc00);
-        transform: scale(1.08);
+        transform: scale(1.05);
+    }
+    hr {
+        margin: 1rem 0;
+        border: 1px solid rgba(255,255,255,0.2);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -134,7 +137,8 @@ def predict_image(image, model):
 
 # ================= UI =================
 st.title("🕵️‍♂️ DeepFake Detection Tool")
-st.markdown('<div class="tagline">Unmasking DeepFakes with AI — Upload • Detect • Trust</div>', unsafe_allow_html=True)
+st.markdown('<div class="tagline">Unmasking DeepFakes with AI — Upload, Detect, Trust</div>', unsafe_allow_html=True)
+st.markdown("<hr>", unsafe_allow_html=True)
 
 # Init session_state
 if "uploader_key" not in st.session_state:
@@ -168,11 +172,12 @@ with col1:
 with col2:
     right_top, right_bottom = st.columns(2)
 
-    # Uploaded Image (smaller, centered)
+    # Uploaded Image (smaller, left of panel)
     if uploaded_file is not None:
         image = Image.open(uploaded_file).convert("RGB")
         with right_top:
-            st.image(image, caption="Uploaded Image", width=180, output_format="PNG", use_column_width=False)
+            st.image(image, caption="Uploaded Image", width=150, output_format="PNG", use_column_width=False, 
+                     clamp=True, channels="RGB")
 
     # Prediction
     if "prediction" in st.session_state:
@@ -180,10 +185,10 @@ with col2:
             f'<div class="result-box">Prediction: {st.session_state.prediction} '
             f'({st.session_state.confidence:.2f}%)</div>', unsafe_allow_html=True)
 
-    # Probabilities graph (smaller)
+    # Probabilities graph (right side)
     if "probs" in st.session_state:
         with right_bottom:
-            fig, ax = plt.subplots(figsize=(2.3, 2.3))
+            fig, ax = plt.subplots(figsize=(2, 2))
             classes = ["Fake", "Real"]
             ax.bar(classes, st.session_state.probs, color=["crimson", "limegreen"])
             ax.set_ylim([0, 1])
@@ -191,17 +196,17 @@ with col2:
             ax.set_title("Prediction Probabilities")
             st.pyplot(fig)
 
-    # Accuracy
+    # Accuracy (below predictions)
     if "accuracy" in st.session_state:
         st.markdown(
             f'<div class="accuracy-box">📊 Model Accuracy: {st.session_state.accuracy:.2f}%</div>',
             unsafe_allow_html=True
         )
 
-    # Confusion Matrix (smaller)
+    # Confusion Matrix (smaller, right side)
     if "cm" in st.session_state:
         with right_bottom:
-            fig, ax = plt.subplots(figsize=(2.3, 2.3))
+            fig, ax = plt.subplots(figsize=(2, 2))
             sns.heatmap(st.session_state.cm, annot=True, fmt="d", cmap="Purples",
                         xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
                         cbar=False, linewidths=1, linecolor='white')
@@ -249,6 +254,6 @@ if cm_clicked:
 if reset_clicked:
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    st.session_state.uploader_key = 0  # ensures file uploader resets
+    st.session_state.uploader_key = st.session_state.get("uploader_key", 0) + 1
     st.session_state.model_choice = "Select a model"
     st.rerun()
