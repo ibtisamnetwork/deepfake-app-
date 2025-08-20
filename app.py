@@ -13,42 +13,12 @@ st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️",
 # ====== CUSTOM CSS ======
 st.markdown("""
 <style>
-/* Make sidebar cleaner */
-[data-testid="stSidebar"] {
-    background-color: #f8f9fa;
-    padding: 20px;
-}
-
-/* Card style for results */
-.result-card {
-    padding: 20px;
-    border-radius: 15px;
-    text-align: center;
-    font-size: 22px;
-    font-weight: bold;
-    margin: 20px 0;
-}
-
-/* Fake = red card */
-.fake {
-    background-color: #ffe5e5;
-    color: #b30000;
-    border: 2px solid #ff4d4d;
-}
-
-/* Real = green card */
-.real {
-    background-color: #e6ffed;
-    color: #006600;
-    border: 2px solid #00cc66;
-}
-
-/* Section headers */
-h2 {
-    margin-top: 20px;
-    color: #333333;
-    font-weight: 600;
-}
+[data-testid="stSidebar"] {background-color: #f8f9fa; padding: 20px;}
+.result-card {padding: 20px; border-radius: 15px; text-align: center;
+              font-size: 22px; font-weight: bold; margin: 20px 0;}
+.fake {background-color: #ffe5e5; color: #b30000; border: 2px solid #ff4d4d;}
+.real {background-color: #e6ffed; color: #006600; border: 2px solid #00cc66;}
+h2 {margin-top: 20px; color: #333333; font-weight: 600;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -98,6 +68,13 @@ uploaded_file = st.sidebar.file_uploader("📤 Upload Image", type=["jpg", "jpeg
 model_choice = st.sidebar.selectbox("🧠 Choose Model", 
                                     ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
 
+# Reset button clears session state
+if st.sidebar.button("🔄 Upload New Image"):
+    for key in ["image", "pred_result"]:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.rerun()
+
 if "model_choice" not in st.session_state or st.session_state.model_choice != model_choice:
     st.session_state.model_choice = model_choice
     if model_choice == "Fine-Tuned ShuffleNetV2":
@@ -126,27 +103,19 @@ if uploaded_file:
             "probs": probs
         }
 
-    # Prediction result as styled card
     if "pred_result" in st.session_state:
         result = st.session_state.pred_result
-        if result["class"] == "Real":
-            st.markdown(
-                f"<div class='result-card real'>🟢 Prediction: {result['class']} "
-                f"({result['confidence']:.2f}%)</div>", 
-                unsafe_allow_html=True
-            )
-        else:
-            st.markdown(
-                f"<div class='result-card fake'>🔴 Prediction: {result['class']} "
-                f"({result['confidence']:.2f}%)</div>", 
-                unsafe_allow_html=True
-            )
+        card_class = "real" if result["class"] == "Real" else "fake"
+        icon = "🟢" if result["class"] == "Real" else "🔴"
+        st.markdown(
+            f"<div class='result-card {card_class}'>{icon} Prediction: "
+            f"{result['class']} ({result['confidence']:.2f}%)</div>", 
+            unsafe_allow_html=True
+        )
 
-        # Uploaded image
         st.subheader("🖼 Uploaded Image")
         st.image(st.session_state.image, use_container_width=True)
 
-        # Probability plot
         st.subheader("📊 Prediction Probabilities")
         fig, ax = plt.subplots()
         classes = ["Fake", "Real"]
