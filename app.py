@@ -10,17 +10,6 @@ import seaborn as sns
 # ====== CONFIG ======
 st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️", layout="wide")
 
-# ====== CUSTOM CSS ======
-st.markdown("""
-<style>
-.result-card {padding: 20px; border-radius: 15px; text-align: center;
-              font-size: 22px; font-weight: bold; margin: 20px 0;}
-.fake {background-color: #ffe5e5; color: #b30000; border: 2px solid #ff4d4d;}
-.real {background-color: #e6ffed; color: #006600; border: 2px solid #00cc66;}
-h2 {margin-top: 20px; color: #333333; font-weight: 600;}
-</style>
-""", unsafe_allow_html=True)
-
 # ====== MODEL LOADING ======
 @st.cache_resource
 def load_finetuned_shufflenet():
@@ -44,7 +33,7 @@ def load_cnn():
     model.eval()
     return model
 
-# ====== TRANSFORM ======
+# ====== IMAGE TRANSFORM ======
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -52,6 +41,7 @@ transform = transforms.Compose([
                          [0.229, 0.224, 0.225])
 ])
 
+# ====== PREDICT FUNCTION ======
 def predict_image(image, model):
     img_tensor = transform(image).unsqueeze(0)
     with torch.no_grad():
@@ -60,39 +50,52 @@ def predict_image(image, model):
         pred_class = np.argmax(probs)
     return pred_class, probs
 
-# ====== MAIN ======
-st.markdown("<h1 style='text-align:center;'>🕵️‍♂️ DeepFake Detection Dashboard</h1>", unsafe_allow_html=True)
 
-# Upload
-uploaded_file = st.file_uploader("📤 Upload an Image", type=["jpg", "jpeg", "png"], label_visibility="visible")
+# ====== UI ======
+st.title("🕵️‍♂️ DeepFake Detection Tool")
 
-# Model choice
-model_choice = st.selectbox("🧠 Choose Model", ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
+# --- Initialize uploader key if not present ---
+if "uploader_key" not in st.session_state:
+    st.session_state.uploader_key = 0
 
-# Load model
-if "model_choice" not in st.session_state or st.session_state.model_choice != model_choice:
-    st.session_state.model_choice = model_choice
-    if model_choice == "Fine-Tuned ShuffleNetV2":
-        st.session_state.model = load_finetuned_shufflenet()
-    elif model_choice == "ShuffleNetV2":
-        st.session_state.model = load_shufflenet()
-    else:
-        st.session_state.model = load_cnn()
+# --- Upload image ---
+uploaded_file = st.file_uploader(
+    "📤 Upload an Image", 
+    type=["jpg", "jpeg", "png"],
+    key=st.session_state.uploader_key
+)
 
-# Buttons
-col1, col2, col3 = st.columns([1,1,1])
-with col1:
-    analyze_clicked = st.button("🔍 Analyze")
-with col2:
-    accuracy_clicked = st.button("📈 Show Accuracy")
-with col3:
-    cm_clicked = st.button("🧩 Show Confusion Matrix")
-
-# Show results
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, caption="Uploaded Image", use_container_width=True)
     st.session_state.image = image
 
+    # Model choice
+    model_choice = st.selectbox("Choose Model", ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
+
+    if "model" not in st.session_state or st.session_state.model_choice != model_choice:
+        st.session_state.model_choice = model_choice
+        if model_choice == "Fine-Tuned ShuffleNetV2":
+            st.session_state.model = load_finetuned_shufflenet()
+        elif model_choice == "ShuffleNetV2":
+            st.session_state.model = load_shufflenet()
+        elif model_choice == "CNN":
+            st.session_state.model = load_cnn()
+
+    # Buttons
+    col1, col2 = st.columns(2)
+    with col1:
+        analyze_clicked = st.button("🔍 Analyze")
+    with col2:
+        accuracy_clicked = st.button("📊 Show Accuracy")
+
+    col3, col4 = st.columns(2)
+    with col3:
+        cm_clicked = st.button("🧩 Show Confusion Matrix")
+    with col4:
+        graph_clicked = st.button("📈 Show Probability Graph")
+
+    # --- Handle actions ---
     if analyze_clicked:
         pred_class, probs = predict_image(st.session_state.image, st.session_state.model)
         st.session_state.pred_result = {
@@ -100,56 +103,35 @@ if uploaded_file:
             "confidence": probs[pred_class] * 100,
             "probs": probs
         }
-
-    if "pred_result" in st.session_state:
-        result = st.session_state.pred_result
-        card_class = "real" if result["class"] == "Real" else "fake"
-        icon = "🟢" if result["class"] == "Real" else "🔴"
-        st.markdown(
-            f"<div class='result-card {card_class}'>{icon} Prediction: "
-            f"{result['class']} ({result['confidence']:.2f}%)</div>", 
-            unsafe_allow_html=True
-        )
-
-        st.subheader("🖼 Uploaded Image")
-        st.image(st.session_state.image, use_container_width=True)
-
-        st.subheader("📊 Prediction Probabilities")
-        fig, ax = plt.subplots()
-        classes = ["Fake", "Real"]
-        probs = result["probs"]
-        ax.bar(classes, probs, color=["red", "green"])
-        ax.set_ylim([0, 1])
-        ax.set_ylabel("Probability")
-        st.pyplot(fig)
-
-        # Reset button only after prediction
-        if st.button("🔄 Reset & Upload New Image"):
-            for key in ["image", "pred_result"]:
-                if key in st.session_state:
-                    del st.session_state[key]
-            st.rerun()
+        st.success(f"Prediction: {st.session_state.pred_result['class']} ({st.session_state.pred_result['confidence']:.2f}%)")
 
     if accuracy_clicked:
-        model_acc = {
-            "Fine-Tuned ShuffleNetV2": 91.3,
-            "ShuffleNetV2": 85.7,
-            "CNN": 83.2
-        }
-        st.subheader("📈 Model Accuracy")
-        st.metric(label="Accuracy", value=f"{model_acc[st.session_state.model_choice]:.2f}%")
+        st.info("⚠️ Model accuracy display removed as per request.")
 
     if cm_clicked:
-        st.subheader("🧩 Confusion Matrix")
-        cm = np.array([[70, 10], [8, 72]])  
+        cm = np.array([[70, 10], [8, 72]])  # example confusion matrix
         fig, ax = plt.subplots()
-        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", 
-                    xticklabels=["Fake", "Real"], 
-                    yticklabels=["Fake", "Real"], 
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Purples",
+                    xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"], 
                     cbar=False, linewidths=1, linecolor='white')
-        ax.set_xlabel("Predicted")
-        ax.set_ylabel("Actual")
+        plt.xlabel("Predicted")
+        plt.ylabel("Actual")
+        plt.title("Confusion Matrix")
         st.pyplot(fig)
 
-else:
-    st.info("👆 Upload an image to start analysis.")
+    if graph_clicked and "pred_result" in st.session_state:
+        probs = st.session_state.pred_result["probs"]
+        fig, ax = plt.subplots()
+        ax.bar(["Fake", "Real"], probs, color=["red", "green"])
+        ax.set_ylabel("Probability")
+        ax.set_title("Prediction Probabilities")
+        st.pyplot(fig)
+
+    # --- Reset button (only after prediction) ---
+    if "pred_result" in st.session_state:
+        if st.button("🔄 Reset & Upload New Image"):
+            for key in ["image", "pred_result", "model", "model_choice"]:
+                if key in st.session_state:
+                    del st.session_state[key]
+            st.session_state.uploader_key += 1  # reset file uploader
+            st.rerun()
