@@ -14,65 +14,67 @@ st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️",
 st.markdown("""
 <style>
     .stApp {
-        background: linear-gradient(135deg, #00c6ff, #0072ff);
+        background: linear-gradient(135deg, #1f1c2c, #928DAB);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #fff;
     }
     h1 {
         text-align: center;
         font-weight: 800;
-        font-size: 2.5rem;
+        font-size: 2.6rem;
         margin-top: 0.2rem;
         margin-bottom: 0.5rem;
-        text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+        text-shadow: 3px 3px 12px rgba(0,0,0,0.5);
         letter-spacing: 1px;
+        background: linear-gradient(90deg, #ff758c, #ff7eb3, #42e695, #3bb2b8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     .tagline {
         text-align: center;
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         font-weight: 600;
         color: #ffe066;
         margin-bottom: 1.5rem;
-        text-shadow: 0 0 10px rgba(255,224,102,0.7);
+        text-shadow: 0 0 12px rgba(255,224,102,0.9);
+        animation: glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+        from { text-shadow: 0 0 8px #ffe066; }
+        to { text-shadow: 0 0 18px #ffcc00; }
     }
     .result-box {
-        padding: 18px;
+        padding: 16px;
         background: linear-gradient(135deg, #ff7eb3, #ff758c);
         border-radius: 15px;
         font-weight: 700;
         font-size: 1.2rem;
         text-align: center;
         color: white;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
-        margin-bottom: 20px;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.5);
+        margin-bottom: 18px;
         transition: all 0.3s ease-in-out;
     }
-    .result-box:hover {
-        transform: scale(1.05);
-    }
+    .result-box:hover { transform: scale(1.05); }
     .accuracy-box {
-        padding: 14px;
+        padding: 12px;
         background: linear-gradient(135deg, #36d1dc, #5b86e5);
         border-radius: 12px;
         font-weight: bold;
         font-size: 1.1rem;
         text-align: center;
         color: #fff;
-        margin-top: 15px;
+        margin-top: 12px;
         box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
         transition: all 0.3s ease-in-out;
     }
-    .accuracy-box:hover {
-        transform: scale(1.05);
-    }
+    .accuracy-box:hover { transform: scale(1.05); }
     .uploaded-img {
-        border-radius: 20px;
-        box-shadow: 0px 6px 16px rgba(0,0,0,0.5);
+        border-radius: 16px;
+        box-shadow: 0px 6px 16px rgba(0,0,0,0.6);
         transition: transform 0.3s ease-in-out;
     }
-    .uploaded-img:hover {
-        transform: scale(1.05);
-    }
+    .uploaded-img:hover { transform: scale(1.05); }
     div.stButton > button {
         border-radius: 10px;
         font-weight: bold;
@@ -80,12 +82,12 @@ st.markdown("""
         background: linear-gradient(135deg, #ffcc00, #ff9900);
         color: black;
         border: none;
-        box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
         transition: all 0.3s ease-in-out;
     }
     div.stButton > button:hover {
         background: linear-gradient(135deg, #ff9900, #ffcc00);
-        transform: scale(1.05);
+        transform: scale(1.08);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -132,7 +134,7 @@ def predict_image(image, model):
 
 # ================= UI =================
 st.title("🕵️‍♂️ DeepFake Detection Tool")
-st.markdown('<div class="tagline">Unmasking DeepFakes with AI — Upload, Detect, Trust</div>', unsafe_allow_html=True)
+st.markdown('<div class="tagline">Unmasking DeepFakes with AI — Upload • Detect • Trust</div>', unsafe_allow_html=True)
 
 # Init session_state
 if "uploader_key" not in st.session_state:
@@ -166,11 +168,11 @@ with col1:
 with col2:
     right_top, right_bottom = st.columns(2)
 
-    # Uploaded Image (smaller, left of panel)
+    # Uploaded Image (smaller, centered)
     if uploaded_file is not None:
         image = Image.open(uploaded_file).convert("RGB")
         with right_top:
-            st.image(image, caption="Uploaded Image", use_column_width=False, width=160, output_format="PNG")
+            st.image(image, caption="Uploaded Image", width=180, output_format="PNG", use_column_width=False)
 
     # Prediction
     if "prediction" in st.session_state:
@@ -178,10 +180,10 @@ with col2:
             f'<div class="result-box">Prediction: {st.session_state.prediction} '
             f'({st.session_state.confidence:.2f}%)</div>', unsafe_allow_html=True)
 
-    # Probabilities graph (right side)
+    # Probabilities graph (smaller)
     if "probs" in st.session_state:
         with right_bottom:
-            fig, ax = plt.subplots(figsize=(2.5, 2.5))
+            fig, ax = plt.subplots(figsize=(2.3, 2.3))
             classes = ["Fake", "Real"]
             ax.bar(classes, st.session_state.probs, color=["crimson", "limegreen"])
             ax.set_ylim([0, 1])
@@ -189,17 +191,17 @@ with col2:
             ax.set_title("Prediction Probabilities")
             st.pyplot(fig)
 
-    # Accuracy (below predictions)
+    # Accuracy
     if "accuracy" in st.session_state:
         st.markdown(
             f'<div class="accuracy-box">📊 Model Accuracy: {st.session_state.accuracy:.2f}%</div>',
             unsafe_allow_html=True
         )
 
-    # Confusion Matrix (smaller, right side)
+    # Confusion Matrix (smaller)
     if "cm" in st.session_state:
         with right_bottom:
-            fig, ax = plt.subplots(figsize=(2.5, 2.5))
+            fig, ax = plt.subplots(figsize=(2.3, 2.3))
             sns.heatmap(st.session_state.cm, annot=True, fmt="d", cmap="Purples",
                         xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
                         cbar=False, linewidths=1, linecolor='white')
@@ -247,7 +249,6 @@ if cm_clicked:
 if reset_clicked:
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    st.session_state.uploader_key = st.session_state.get("uploader_key", 0) + 1
+    st.session_state.uploader_key = 0  # ensures file uploader resets
     st.session_state.model_choice = "Select a model"
     st.rerun()
-
