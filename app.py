@@ -13,78 +13,96 @@ st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️",
 # ================= CUSTOM CSS =================
 st.markdown("""
 <style>
+    /* App background */
     .stApp {
-        background: linear-gradient(135deg, #71b7e6, #9b59b6);
+        background: linear-gradient(135deg, #6a11cb, #2575fc);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #fff;
     }
+
     h1 {
         text-align: center;
-        font-weight: 700;
-        font-size: 2.2rem;
+        font-weight: 800;
+        font-size: 2.5rem;
         margin-top: 0.2rem;
-        margin-bottom: 0.3rem;
-        text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-        transition: all 0.3s ease-in-out;
+        margin-bottom: 0.5rem;
+        text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+        letter-spacing: 1px;
     }
-    h1:hover {
+
+    /* Tagline */
+    .tagline {
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: 600;
         color: #ffe066;
-        text-shadow: 3px 3px 8px rgba(0,0,0,0.6);
-        transform: scale(1.05);
+        margin-bottom: 1.5rem;
+        text-shadow: 0 0 10px rgba(255,224,102,0.7);
     }
+
+    /* Result box */
     .result-box {
-        padding: 15px 20px;
-        background: rgba(255, 255, 255, 0.15);
+        padding: 18px;
+        background: linear-gradient(135deg, #ff7eb3, #ff758c);
         border-radius: 15px;
         font-weight: 700;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         text-align: center;
-        color: #fff;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+        color: white;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
         margin-bottom: 20px;
         transition: all 0.3s ease-in-out;
     }
     .result-box:hover {
-        background: rgba(255, 255, 255, 0.25);
         transform: scale(1.05);
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
     }
+
+    /* Accuracy box */
     .accuracy-box {
-        padding: 12px 18px;
-        background: rgba(0, 0, 0, 0.25);
+        padding: 14px;
+        background: linear-gradient(135deg, #36d1dc, #5b86e5);
         border-radius: 12px;
         font-weight: bold;
-        font-size: 1.05rem;
+        font-size: 1.1rem;
         text-align: center;
-        color: #ffe066;
+        color: #fff;
         margin-top: 15px;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
         transition: all 0.3s ease-in-out;
     }
     .accuracy-box:hover {
-        background: rgba(0, 0, 0, 0.4);
-        color: #fff176;
         transform: scale(1.05);
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.4);
     }
+
+    /* Uploaded image */
     .image-box {
         display: flex;
         justify-content: center;
         margin-bottom: 20px;
+    }
+    .uploaded-img {
+        border-radius: 20px;
+        box-shadow: 0px 6px 16px rgba(0,0,0,0.5);
         transition: transform 0.3s ease-in-out;
     }
-    .image-box:hover {
+    .uploaded-img:hover {
         transform: scale(1.05);
     }
-    /* Buttons hover */
+
+    /* Stylish buttons */
     div.stButton > button {
-        transition: all 0.3s ease-in-out;
+        border-radius: 10px;
         font-weight: bold;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, #ffcc00, #ff9900);
+        color: black;
+        border: none;
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
+        transition: all 0.3s ease-in-out;
     }
     div.stButton > button:hover {
-        background-color: #ffcc00 !important;
-        color: black !important;
+        background: linear-gradient(135deg, #ff9900, #ffcc00);
         transform: scale(1.05);
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -131,35 +149,15 @@ def predict_image(image, model):
 
 # ================= UI =================
 st.title("🕵️‍♂️ DeepFake Detection Tool")
+st.markdown('<div class="tagline">Unmasking DeepFakes with AI — Upload, Detect, Trust</div>', unsafe_allow_html=True)
 
-# --- Tagline with Glow ---
-st.markdown("""
-<div style="display:flex; align-items:center; justify-content:center; margin: 12px 0;">
-    <hr style="flex:1; border:none; height:3px; background:linear-gradient(to right, #ffe066, #ff7eb3, #6a11cb); border-radius:5px; opacity:0.85;">
-    <span style="padding: 0 15px; font-size:1.2rem; font-weight:bold; color:#ffe066; 
-                 text-shadow:0 0 8px rgba(255,224,102,0.7), 0 0 12px rgba(255,224,102,0.5);
-                 transition:all 0.3s ease-in-out; cursor:default;">
-        Unmasking DeepFakes with AI — Upload, Detect, Trust
-    </span>
-    <hr style="flex:1; border:none; height:3px; background:linear-gradient(to left, #ffe066, #ff7eb3, #6a11cb); border-radius:5px; opacity:0.85;">
-</div>
-
-<style>
-    div span:hover {
-        color:#fff176 !important;
-        transform:scale(1.05);
-        text-shadow:0 0 10px rgba(255,255,200,0.9), 0 0 15px rgba(255,255,150,0.6);
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# Init uploader_key for reset
+# Init session_state
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
 if "model_choice" not in st.session_state:
     st.session_state.model_choice = "Select a model"
 
-# Layout: two columns (left controls, right results)
+# Layout
 col1, col2 = st.columns([1, 1])
 
 with col1:
@@ -172,7 +170,6 @@ with col1:
         key="model_choice"
     )
 
-    # Buttons in one row
     btn_col1, btn_col2, btn_col3, btn_col4 = st.columns(4)
     with btn_col1:
         analyze_clicked = st.button("🔍 Analyze")
@@ -184,11 +181,11 @@ with col1:
         reset_clicked = st.button("🔄 Reset")
 
 with col2:
-    # Show uploaded image smaller and centered
+    # Show uploaded image
     if uploaded_file is not None:
         image = Image.open(uploaded_file).convert("RGB")
         st.markdown('<div class="image-box">', unsafe_allow_html=True)
-        st.image(image, caption="Uploaded Image", use_column_width=False, width=220)
+        st.image(image, caption="Uploaded Image", use_column_width=False, width=220, output_format="PNG")
         st.markdown('</div>', unsafe_allow_html=True)
 
     if "prediction" in st.session_state:
@@ -212,7 +209,7 @@ with col2:
         )
 
     if "cm" in st.session_state:
-        fig, ax = plt.subplots(figsize=(3, 3))  # smaller confusion matrix
+        fig, ax = plt.subplots(figsize=(3, 3))
         sns.heatmap(st.session_state.cm, annot=True, fmt="d", cmap="Purples",
                     xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
                     cbar=False, linewidths=1, linecolor='white')
@@ -260,6 +257,6 @@ if cm_clicked:
 if reset_clicked:
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    st.session_state.uploader_key = 0
+    st.session_state.uploader_key = st.session_state.get("uploader_key", 0) + 1
     st.session_state.model_choice = "Select a model"
     st.rerun()
