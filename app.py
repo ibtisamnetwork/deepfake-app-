@@ -17,19 +17,15 @@ st.markdown("""
         background: linear-gradient(135deg, #71b7e6, #9b59b6);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #fff;
-        padding-bottom: 40px;
     }
-    h1, .css-10trblm.e16nr0p33 {
+    h1 {
         text-align: center;
         font-weight: 700;
         font-size: 2.8rem;
-        margin-top: 0.5rem;
         margin-bottom: 1rem;
         text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
     }
     .result-box {
-        max-width: 460px;
-        margin: 0 auto 35px auto;
         padding: 20px 25px;
         background: rgba(255, 255, 255, 0.15);
         border-radius: 20px;
@@ -38,7 +34,6 @@ st.markdown("""
         font-size: 1.3rem;
         text-align: center;
         color: #fff;
-        letter-spacing: 0.03em;
         text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
     }
     button.stButton > button {
@@ -50,17 +45,15 @@ st.markdown("""
         border-radius: 12px;
         box-shadow: 0 5px 20px rgba(107, 17, 203, 0.5);
         transition: background-color 0.3s ease, transform 0.2s ease;
-        min-width: 150px;
         cursor: pointer;
         border: none;
+        width: 100%;
+        margin-bottom: 10px;
     }
     button.stButton > button:hover {
         background-color: #8e2de2;
-        transform: scale(1.05);
+        transform: scale(1.03);
         box-shadow: 0 8px 30px rgba(142, 45, 226, 0.9);
-    }
-    button.stButton > button:active {
-        transform: scale(0.95);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -111,14 +104,13 @@ def predict_image(image, model):
 # ====== UI STARTS ======
 st.title("🕵️‍♂️ DeepFake Detection Tool")
 
-# Step 1: Upload Image
 uploaded_file = st.file_uploader("Upload an Image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
     st.session_state.image = image
 
-    # Make a 2x2 grid layout
+    # Grid layout (2x2 like your sketch)
     row1_col1, row1_col2 = st.columns([1, 1])
     row2_col1, row2_col2 = st.columns([1, 1])
 
@@ -151,7 +143,7 @@ if uploaded_file:
         else:
             st.info("Prediction result will appear here")
 
-    # --- Bottom Right: Controls ---
+    # --- Bottom Right: Controls (stacked vertically) ---
     with row2_col2:
         model_choice = st.selectbox("Choose Model", ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
 
@@ -166,11 +158,7 @@ if uploaded_file:
                     st.session_state.model = load_cnn()
             st.success(f"Model '{model_choice}' loaded!")
 
-        analyze_clicked = st.button("🔍 Analyze")
-        accuracy_clicked = st.button("📈 Show Accuracy")
-        cm_clicked = st.button("🧩 Show Confusion Matrix")
-
-        if analyze_clicked and "model" in st.session_state:
+        if st.button("🔍 Analyze") and "model" in st.session_state:
             pred_class, probs = predict_image(st.session_state.image, st.session_state.model)
             st.session_state.pred_result = {
                 "class": "Real" if pred_class == 1 else "Fake",
@@ -179,7 +167,7 @@ if uploaded_file:
             }
             st.experimental_rerun()
 
-        if accuracy_clicked:
+        if st.button("📈 Show Accuracy"):
             model_acc = {
                 "Fine-Tuned ShuffleNetV2": 91.3,
                 "ShuffleNetV2": 85.7,
@@ -187,8 +175,8 @@ if uploaded_file:
             }
             st.metric(label="📊 Model Accuracy", value=f"{model_acc[model_choice]:.2f}%")
 
-        if cm_clicked:
-            cm = np.array([[70, 10], [8, 72]])  # Example matrix
+        if st.button("🧩 Show Confusion Matrix"):
+            cm = np.array([[70, 10], [8, 72]])
             fig, ax = plt.subplots()
             sns.heatmap(cm, annot=True, fmt="d", cmap="Purples",
                         xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
