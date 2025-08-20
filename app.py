@@ -13,7 +13,6 @@ st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️",
 # ====== CUSTOM CSS ======
 st.markdown("""
 <style>
-[data-testid="stSidebar"] {background-color: #f8f9fa; padding: 20px;}
 .result-card {padding: 20px; border-radius: 15px; text-align: center;
               font-size: 22px; font-weight: bold; margin: 20px 0;}
 .fake {background-color: #ffe5e5; color: #b30000; border: 2px solid #ff4d4d;}
@@ -61,13 +60,16 @@ def predict_image(image, model):
         pred_class = np.argmax(probs)
     return pred_class, probs
 
-# ====== SIDEBAR ======
-st.sidebar.title("⚙️ Controls")
-uploaded_file = st.sidebar.file_uploader("📤 Upload Image", type=["jpg", "jpeg", "png"])
+# ====== MAIN ======
+st.markdown("<h1 style='text-align:center;'>🕵️‍♂️ DeepFake Detection Dashboard</h1>", unsafe_allow_html=True)
 
-model_choice = st.sidebar.selectbox("🧠 Choose Model", 
-                                    ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
+# Upload
+uploaded_file = st.file_uploader("📤 Upload an Image", type=["jpg", "jpeg", "png"], label_visibility="visible")
 
+# Model choice
+model_choice = st.selectbox("🧠 Choose Model", ["Fine-Tuned ShuffleNetV2", "ShuffleNetV2", "CNN"])
+
+# Load model
 if "model_choice" not in st.session_state or st.session_state.model_choice != model_choice:
     st.session_state.model_choice = model_choice
     if model_choice == "Fine-Tuned ShuffleNetV2":
@@ -77,13 +79,16 @@ if "model_choice" not in st.session_state or st.session_state.model_choice != mo
     else:
         st.session_state.model = load_cnn()
 
-analyze_clicked = st.sidebar.button("🔍 Analyze")
-accuracy_clicked = st.sidebar.button("📈 Show Accuracy")
-cm_clicked = st.sidebar.button("🧩 Show Confusion Matrix")
+# Buttons
+col1, col2, col3 = st.columns([1,1,1])
+with col1:
+    analyze_clicked = st.button("🔍 Analyze")
+with col2:
+    accuracy_clicked = st.button("📈 Show Accuracy")
+with col3:
+    cm_clicked = st.button("🧩 Show Confusion Matrix")
 
-# ====== MAIN ======
-st.markdown("<h1 style='text-align:center;'>🕵️‍♂️ DeepFake Detection Dashboard</h1>", unsafe_allow_html=True)
-
+# Show results
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
     st.session_state.image = image
@@ -118,7 +123,7 @@ if uploaded_file:
         ax.set_ylabel("Probability")
         st.pyplot(fig)
 
-        # 🔄 Reset button appears only after prediction
+        # Reset button only after prediction
         if st.button("🔄 Reset & Upload New Image"):
             for key in ["image", "pred_result"]:
                 if key in st.session_state:
@@ -147,4 +152,4 @@ if uploaded_file:
         st.pyplot(fig)
 
 else:
-    st.info("👆 Upload an image from the sidebar to start analysis.")
+    st.info("👆 Upload an image to start analysis.")
