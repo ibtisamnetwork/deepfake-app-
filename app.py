@@ -83,7 +83,6 @@ with col_left:
                     st.session_state.model = load_shufflenet()
                 elif model_choice == "CNN":
                     st.session_state.model = load_cnn()
-            st.success(f"Model '{model_choice}' loaded!")
 
         analyze_clicked = st.button("🔍 Analyze")
         if analyze_clicked and "model" in st.session_state and "image" in st.session_state:
