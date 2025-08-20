@@ -14,7 +14,7 @@ st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️",
 st.markdown("""
 <style>
     .stApp {
-        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        background: linear-gradient(135deg, #141e30, #243b55);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #fff;
     }
@@ -24,20 +24,19 @@ st.markdown("""
         font-size: 2.6rem;
         margin-top: 0.2rem;
         margin-bottom: 0.5rem;
-        text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+        text-shadow: 2px 2px 10px rgba(0,0,0,0.7);
         letter-spacing: 1px;
     }
     .tagline {
         text-align: center;
         font-size: 1.2rem;
         font-weight: 600;
-        color: #ffe066;
+        color: #ffcc70;
         margin-bottom: 1.8rem;
-        text-shadow: 0 0 10px rgba(255,224,102,0.7);
+        text-shadow: 0 0 10px rgba(255,204,112,0.8);
     }
-    .result-box {
+    .result-box, .accuracy-box {
         padding: 18px;
-        background: linear-gradient(135deg, #ff7eb3, #ff758c);
         border-radius: 15px;
         font-weight: 700;
         font-size: 1.2rem;
@@ -47,37 +46,27 @@ st.markdown("""
         margin-bottom: 15px;
         transition: all 0.3s ease-in-out;
     }
-    .result-box:hover {
-        transform: scale(1.05);
+    .result-box {
+        background: linear-gradient(135deg, #ff758c, #ff7eb3);
     }
     .accuracy-box {
-        padding: 14px;
         background: linear-gradient(135deg, #36d1dc, #5b86e5);
-        border-radius: 12px;
-        font-weight: bold;
         font-size: 1.1rem;
-        text-align: center;
-        color: #fff;
-        margin-top: 10px;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
-        transition: all 0.3s ease-in-out;
     }
-    .accuracy-box:hover {
+    .result-box:hover, .accuracy-box:hover {
         transform: scale(1.05);
     }
     .uploaded-img {
-        border-radius: 20px;
+        border-radius: 12px;
         box-shadow: 0px 6px 16px rgba(0,0,0,0.5);
-        transition: transform 0.3s ease-in-out;
-        margin-bottom: 15px;
-    }
-    .uploaded-img:hover {
-        transform: scale(1.05);
+        border: 3px solid #ffcc70;
+        margin: auto;
+        display: block;
     }
     div.stButton > button {
         border-radius: 10px;
         font-weight: bold;
-        padding: 0.5rem 1rem;
+        padding: 0.6rem 1.2rem;
         background: linear-gradient(135deg, #ffcc00, #ff9900);
         color: black;
         border: none;
@@ -87,6 +76,12 @@ st.markdown("""
     div.stButton > button:hover {
         background: linear-gradient(135deg, #ff9900, #ffcc00);
         transform: scale(1.05);
+    }
+    .stFileUploader {
+        background: rgba(255,255,255,0.1);
+        border: 2px dashed #ffcc70;
+        border-radius: 12px;
+        padding: 1rem;
     }
     hr {
         margin: 1rem 0;
@@ -172,12 +167,12 @@ with col1:
 with col2:
     right_top, right_bottom = st.columns(2)
 
-    # Uploaded Image (smaller, left of panel)
+    # Uploaded Image (small & centered)
     if uploaded_file is not None:
         image = Image.open(uploaded_file).convert("RGB")
         with right_top:
-            st.image(image, caption="Uploaded Image", width=150, output_format="PNG", use_column_width=False, 
-                     clamp=True, channels="RGB")
+            st.image(image, caption="Uploaded Image", width=120, output_format="PNG", 
+                     use_column_width=False, clamp=True, channels="RGB")
 
     # Prediction
     if "prediction" in st.session_state:
@@ -185,7 +180,7 @@ with col2:
             f'<div class="result-box">Prediction: {st.session_state.prediction} '
             f'({st.session_state.confidence:.2f}%)</div>', unsafe_allow_html=True)
 
-    # Probabilities graph (right side)
+    # Probabilities graph
     if "probs" in st.session_state:
         with right_bottom:
             fig, ax = plt.subplots(figsize=(2, 2))
@@ -196,14 +191,14 @@ with col2:
             ax.set_title("Prediction Probabilities")
             st.pyplot(fig)
 
-    # Accuracy (below predictions)
+    # Accuracy
     if "accuracy" in st.session_state:
         st.markdown(
             f'<div class="accuracy-box">📊 Model Accuracy: {st.session_state.accuracy:.2f}%</div>',
             unsafe_allow_html=True
         )
 
-    # Confusion Matrix (smaller, right side)
+    # Confusion Matrix (small)
     if "cm" in st.session_state:
         with right_bottom:
             fig, ax = plt.subplots(figsize=(2, 2))
