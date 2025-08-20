@@ -13,13 +13,11 @@ st.set_page_config(page_title="DeepFake Detector", page_icon="🕵️‍♂️",
 # ================= CUSTOM CSS =================
 st.markdown("""
 <style>
-    /* App background */
     .stApp {
         background: linear-gradient(135deg, #00c6ff, #0072ff);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #fff;
     }
-
     h1 {
         text-align: center;
         font-weight: 800;
@@ -29,8 +27,6 @@ st.markdown("""
         text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
         letter-spacing: 1px;
     }
-
-    /* Tagline */
     .tagline {
         text-align: center;
         font-size: 1.2rem;
@@ -39,8 +35,6 @@ st.markdown("""
         margin-bottom: 1.5rem;
         text-shadow: 0 0 10px rgba(255,224,102,0.7);
     }
-
-    /* Result box */
     .result-box {
         padding: 18px;
         background: linear-gradient(135deg, #ff7eb3, #ff758c);
@@ -56,8 +50,6 @@ st.markdown("""
     .result-box:hover {
         transform: scale(1.05);
     }
-
-    /* Accuracy box */
     .accuracy-box {
         padding: 14px;
         background: linear-gradient(135deg, #36d1dc, #5b86e5);
@@ -73,8 +65,6 @@ st.markdown("""
     .accuracy-box:hover {
         transform: scale(1.05);
     }
-
-    /* Uploaded image */
     .image-box {
         display: flex;
         justify-content: center;
@@ -88,8 +78,6 @@ st.markdown("""
     .uploaded-img:hover {
         transform: scale(1.05);
     }
-
-    /* Stylish buttons */
     div.stButton > button {
         border-radius: 10px;
         font-weight: bold;
@@ -181,11 +169,11 @@ with col1:
         reset_clicked = st.button("🔄 Reset")
 
 with col2:
-    # Show uploaded image
+    # Show uploaded image (smaller size)
     if uploaded_file is not None:
         image = Image.open(uploaded_file).convert("RGB")
         st.markdown('<div class="image-box">', unsafe_allow_html=True)
-        st.image(image, caption="Uploaded Image", use_column_width=False, width=220, output_format="PNG")
+        st.image(image, caption="Uploaded Image", use_column_width=False, width=160, output_format="PNG")
         st.markdown('</div>', unsafe_allow_html=True)
 
     if "prediction" in st.session_state:
@@ -194,7 +182,7 @@ with col2:
             f'({st.session_state.confidence:.2f}%)</div>', unsafe_allow_html=True)
 
     if "probs" in st.session_state:
-        fig, ax = plt.subplots(figsize=(3, 3))
+        fig, ax = plt.subplots(figsize=(2.5, 2.5))
         classes = ["Fake", "Real"]
         ax.bar(classes, st.session_state.probs, color=["crimson", "limegreen"])
         ax.set_ylim([0, 1])
@@ -209,7 +197,7 @@ with col2:
         )
 
     if "cm" in st.session_state:
-        fig, ax = plt.subplots(figsize=(3, 3))
+        fig, ax = plt.subplots(figsize=(2.5, 2.5))   # 🔹 Smaller confusion matrix
         sns.heatmap(st.session_state.cm, annot=True, fmt="d", cmap="Purples",
                     xticklabels=["Fake", "Real"], yticklabels=["Fake", "Real"],
                     cbar=False, linewidths=1, linecolor='white')
@@ -253,7 +241,7 @@ if cm_clicked:
     else:
         st.session_state.cm = np.array([[70, 10], [8, 72]])
 
-# Reset: clears everything including uploaded file and model choice
+# Reset
 if reset_clicked:
     for key in list(st.session_state.keys()):
         del st.session_state[key]
